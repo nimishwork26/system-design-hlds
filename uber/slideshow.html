@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Designing Uber — Slideshow</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0d1017;
+      --surface: #161922;
+      --border: #252a3d;
+      --text: #e2e8f0;
+      --muted: #8892b0;
+      --dim: #4a5580;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ── Chrome ── */
+    #chrome {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 48px;
+      background: rgba(13,16,23,.92);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 16px;
+      z-index: 20;
+      backdrop-filter: blur(8px);
+    }
+    #chapter-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: background .4s;
+    }
+    #chapter-name {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      transition: color .4s;
+    }
+    #slide-counter {
+      margin-left: auto;
+      font-size: 12px;
+      color: var(--dim);
+      font-variant-numeric: tabular-nums;
+    }
+    #nav-hint {
+      font-size: 11px;
+      color: var(--dim);
+    }
+    .chrome-link {
+      font-size: 11px;
+      color: var(--dim);
+      text-decoration: none;
+      border: 1px solid var(--border);
+      padding: 3px 10px;
+      border-radius: 5px;
+      transition: color .15s;
+    }
+    .chrome-link:hover { color: var(--text); }
+
+    /* ── Progress bar ── */
+    #progress {
+      position: fixed;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: #00b4d8;
+      transition: width .35s ease, background .4s;
+      z-index: 20;
+    }
+
+    /* ── Stage ── */
+    #stage {
+      position: fixed;
+      top: 48px; left: 0; right: 0; bottom: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* ── Slide ── */
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 80px;
+      opacity: 0;
+      transform: translateY(14px);
+      transition: opacity .35s ease, transform .35s ease;
+      pointer-events: none;
+    }
+    .slide.active {
+      opacity: 1;
+      transform: translateY(0);
+      pointer-events: all;
+    }
+    .slide.exit {
+      opacity: 0;
+      transform: translateY(-14px);
+    }
+    .slide-inner {
+      width: 100%;
+      max-width: 860px;
+    }
+
+    /* ── Typography ── */
+    .slide-tag {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 16px;
+      display: inline-block;
+    }
+    .slide-title {
+      font-size: 38px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+    .slide-subtitle {
+      font-size: 20px;
+      color: var(--muted);
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    .slide-body {
+      font-size: 17px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .slide-body strong { color: var(--text); }
+    .slide-note {
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--dim);
+      border-top: 1px solid var(--border);
+      padding-top: 12px;
+    }
+
+    /* ── Title slide ── */
+    .slide--title { text-align: center; }
+    .slide--title .slide-title { font-size: 52px; }
+    .slide--title .slide-subtitle { font-size: 22px; margin-top: 8px; }
+
+    /* ── Callout slide ── */
+    .slide--callout { text-align: center; }
+    .callout-number {
+      font-size: 72px;
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 12px;
+    }
+    .callout-label {
+      font-size: 18px;
+      color: var(--muted);
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    /* ── Problem / Decision slides ── */
+    .problem-box {
+      border-left: 4px solid #ef4444;
+      background: rgba(239,68,68,.07);
+      border-radius: 0 12px 12px 0;
+      padding: 20px 28px;
+      margin-top: 20px;
+    }
+    .problem-box .label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #ef4444;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 8px;
+    }
+    .problem-box p { font-size: 18px; color: #fca5a5; line-height: 1.6; }
+
+    .decision-box {
+      border-left: 4px solid #16a34a;
+      background: rgba(22,163,74,.08);
+      border-radius: 0 12px 12px 0;
+      padding: 20px 28px;
+      margin-top: 20px;
+    }
+    .decision-box .label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #16a34a;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 8px;
+    }
+    .decision-box p { font-size: 17px; color: #86efac; line-height: 1.6; }
+
+    /* ── Bullets ── */
+    .bullets { list-style: none; padding: 0; margin-top: 16px; }
+    .bullets li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      font-size: 17px;
+      color: var(--muted);
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .bullets li::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      flex-shrink: 0;
+      margin-top: 9px;
+    }
+    .bullets li strong { color: var(--text); }
+    .bullets.numbered { counter-reset: bul; }
+    .bullets.numbered li::before {
+      content: counter(bul);
+      counter-increment: bul;
+      background: none;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      margin-top: 0;
+      flex-shrink: 0;
+    }
+
+    /* ── Options (no/maybe/yes) ── */
+    .options { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+    .opt {
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 14px 18px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .opt.no  { border-color: #450a0a; background: rgba(220,38,38,.06); }
+    .opt.ok  { border-color: #1c3020; background: rgba(22,163,74,.05); }
+    .opt.yes { border-color: #1e1060; background: rgba(99,102,241,.08); }
+    .opt-pill {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 3px 9px;
+      border-radius: 4px;
+      white-space: nowrap;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .no  .opt-pill { background: #450a0a; color: #fca5a5; }
+    .ok  .opt-pill { background: #14532d; color: #86efac; }
+    .yes .opt-pill { background: #2e1065; color: #c4b5fd; }
+    .opt-body { font-size: 15px; color: var(--muted); line-height: 1.5; }
+    .opt-body strong { color: var(--text); }
+
+    /* ── Two columns ── */
+    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+    .col-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 20px;
+    }
+    .col-card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
+    .col-card p { font-size: 15px; color: var(--muted); line-height: 1.5; }
+    .col-card p strong { color: var(--text); }
+    .col-card ul { font-size: 15px; padding-left: 18px; color: var(--muted); }
+    .col-card li { margin-bottom: 6px; }
+
+    /* ── Code block ── */
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px 22px;
+      font-family: 'Cascadia Code', 'Fira Code', monospace;
+      font-size: 14.5px;
+      color: #7dd3fc;
+      line-height: 1.7;
+      margin-top: 16px;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    .code-note {
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ── Table ── */
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 15px; }
+    .data-table th { padding: 9px 14px; background: var(--surface); color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; text-align: left; }
+    .data-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); line-height: 1.4; }
+    .data-table tr:last-child td { border: none; }
+    .data-table td:first-child { color: #7dd3fc; font-weight: 600; }
+
+    /* ── Observe callout ── */
+    .observe {
+      border-left: 3px solid #00b4d8;
+      background: rgba(0,180,216,.07);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 18px;
+      margin-top: 16px;
+      font-size: 16px;
+      color: var(--muted);
+    }
+    .observe strong { color: #38bdf8; }
+    .observe.warn { border-color: #d97706; background: rgba(217,119,6,.07); }
+    .observe.warn strong { color: #fbbf24; }
+
+    /* ── Diagram ── */
+    .diagram-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 16px;
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .diagram-wrap .mermaid { max-width: 100%; }
+    svg[id^="mermaid"] { max-width: 100%; }
+
+    /* ── Chapter divider ── */
+    .slide--chapter { text-align: center; }
+    .chapter-num {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      margin-bottom: 20px;
+    }
+    .slide--chapter .slide-title { font-size: 44px; }
+
+    /* ── Closing ── */
+    .closing-item {
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+    .closing-num {
+      font-size: 28px;
+      font-weight: 800;
+      line-height: 1;
+      flex-shrink: 0;
+      width: 40px;
+    }
+    .closing-text strong { display: block; font-size: 18px; color: var(--text); margin-bottom: 4px; }
+    .closing-text span { font-size: 15px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<!-- Chrome -->
+<div id="chrome">
+  <div id="chapter-dot"></div>
+  <span id="chapter-name"></span>
+  <span id="slide-counter"></span>
+  <span id="nav-hint">Enter / → next &nbsp;·&nbsp; ← / Shift+Tab previous &nbsp;·&nbsp; click to advance</span>
+  <a href="hld.html" class="chrome-link">Full HLD</a>
+  <a href="mindmap.html" class="chrome-link">Mind Map</a>
+</div>
+
+<div id="stage"></div>
+<div id="progress"></div>
+
+<script>
+// ── CHAPTER DEFINITIONS ──────────────────────────────────────────────────────
+const CHAPTERS = [
+  { name: "The Problem Space",    color: "#00b4d8" },
+  { name: "Naive Design",         color: "#f59e0b" },
+  { name: "Location at Scale",    color: "#ef4444" },
+  { name: "Finding a Driver",     color: "#8b5cf6" },
+  { name: "No Double Assignment", color: "#f97316" },
+  { name: "Resilient Workflow",   color: "#06b6d4" },
+  { name: "Real-time Updates",    color: "#16a34a" },
+  { name: "API Design",           color: "#00b4d8" },
+  { name: "The Complete Picture", color: "#00b4d8" },
+];
+
+// ── SLIDE DATA ───────────────────────────────────────────────────────────────
+const SLIDES = [
+
+  // ── Chapter 1: Problem Space ─────────────────────────────────────────────
+  {
+    ch: 0, type: "title",
+    title: "Designing Uber",
+    subtitle: "Every component earned, not assumed",
+    note: "A problem-driven system design walkthrough · 35 slides",
+  },
+  {
+    ch: 0, type: "content",
+    title: "What Are We Building?",
+    bullets: [
+      ["Rider requests a ride — picks pickup + dropoff, sees fare + ETA, tracks driver, can cancel"],
+      ["Driver goes online, accepts or rejects offers, streams GPS every ~5 seconds"],
+      ["Non-functional: match in <strong>&lt;1 second</strong>, 99.99% uptime, <strong>no double driver assignment</strong>"],
+      ["Out of scope today: payments, surge algorithm, maps engine, driver KYC"],
+    ],
+    note: "Agree on scope before drawing anything. Calling out what's out of scope is a signal of maturity.",
+  },
+  {
+    ch: 0, type: "callout",
+    title: "The Number That Drives Everything",
+    big: "1,000,000",
+    unit: "writes / second",
+    body: "5M active drivers × 1 location update every 5 seconds.<br>Almost every architecture decision below traces back to this single constraint.",
+    color: "#ef4444",
+  },
+  {
+    ch: 0, type: "content",
+    title: "Capacity At a Glance",
+    bullets: [
+      ["<strong>10M trips/day</strong> → ~350/sec peak — manageable for a relational DB"],
+      ["<strong>5M active drivers online</strong> — their location is the hard problem"],
+      ["<strong>1M location writes/sec</strong> ← rules out any traditional DB on the hot path"],
+      ["Live driver index: <strong>5M × 100 bytes ≈ 500 MB</strong> — fits entirely in RAM"],
+      ["<strong>315K concurrent trips at peak</strong> — each needs live location pushes"],
+    ],
+  },
+
+  // ── Chapter 2: Naive Design ───────────────────────────────────────────────
+  {
+    ch: 1, type: "diagram",
+    title: "Start Simple",
+    subtitle: "Rider + Driver apps → API server → Database. Where does this break?",
+    mermaid: `flowchart LR
+    RA["Rider App"] --> API["API Server"]
+    DA["Driver App"] --> API
+    API --> DB[("Database")]`,
+  },
+  {
+    ch: 1, type: "problem",
+    title: "Break #1 — The Database Dies",
+    problem: "5M drivers × 1 update / 5s = <strong>1M writes/sec into our database.</strong><br>PostgreSQL handles ~10K writes/sec. We are <strong>100× over the limit</strong> before a single rider has booked anything.",
+  },
+  {
+    ch: 1, type: "problem",
+    title: "Break #2 — Proximity Queries Are Slow",
+    problem: "\"Find drivers within 5km\" on 5 million rows without spatial indexing is a <strong>full table scan</strong>.<br>Re-indexing during a 1M/s write storm makes it worse, not better.",
+  },
+  {
+    ch: 1, type: "problem",
+    title: "Break #3 — Two Servers, Same Driver",
+    problem: "Two API server instances simultaneously select the <strong>same available driver</strong> for two different riders.<br>Without coordination, one rider's driver simply never arrives.",
+  },
+  {
+    ch: 1, type: "problem",
+    title: "Break #4 — Polling Is Expensive",
+    problem: "Riders poll \"where's my driver?\" every 5s during trips.<br><strong>315K trips × 12 req/min = 3.8M requests/min</strong><br>of mostly empty responses.",
+  },
+  {
+    ch: 1, type: "content",
+    title: "Our Design Agenda",
+    subtitle: "Four problems, solved in order.",
+    bullets_numbered: [
+      "How do we handle <strong>1M location writes/sec</strong>?",
+      "How do we find the <strong>best available driver</strong> nearby in &lt;100ms?",
+      "How do we guarantee <strong>one driver per rider</strong> — no race conditions?",
+      "How do riders <strong>track the driver</strong> without polling?",
+    ],
+    note: "Stating the design agenda out loud in an interview shows structure. The interviewer knows you won't miss anything.",
+  },
+
+  // ── Chapter 3: Location at Scale ─────────────────────────────────────────
+  {
+    ch: 2, type: "chapter",
+    chNum: "Problem 1",
+    title: "Location at Scale",
+    subtitle: "How do we store and query 5M driver locations, updated every 5 seconds?",
+  },
+  {
+    ch: 2, type: "options",
+    title: "Option Space: 1M Writes/Sec",
+    options: [
+      { kind: "no",   pill: "Fails",   head: "Write directly to PostgreSQL / DynamoDB",  body: "PG handles ~10K writes/sec. DynamoDB at 1M writes/sec costs $200K+/day. Proximity queries on a live 5M-row table are slow and degrade under write pressure." },
+      { kind: "ok",   pill: "Partial", head: "Batch writes + PostGIS spatial index",     body: "Aggregates over 5–10s windows, then batch-insert. PostGIS gives O(log n) proximity queries. Throughput solved. <strong>Problem:</strong> driver position lags reality by the batch window — ETA accuracy degrades." },
+      { kind: "yes",  pill: "Decision", head: "Redis Geo as the live index",             body: "<code>GEOADD</code> encodes lat/lng as a 52-bit integer, <strong>overwrites the previous position</strong> — no stale accumulation. <code>GEOSEARCH</code> returns nearest 10 drivers in sub-millisecond. All 5M fit in ~500 MB RAM." },
+    ],
+  },
+  {
+    ch: 2, type: "decision",
+    title: "Decision: Redis Geo",
+    decision: "<code>GEOADD geo:drivers:nyc lat lng driver_id</code><br>In-memory · GEOADD overwrites · sub-ms query · repopulates in 5s on restart.",
+    note: "Repopulates because drivers keep pinging. No special recovery logic needed.",
+  },
+  {
+    ch: 2, type: "options",
+    title: "New Problem: Redis Is Ephemeral",
+    subtitle: "We need durable location history for billing disputes and trip reconstruction.",
+    options: [
+      { kind: "no",  pill: "Fails",    head: "Synchronous write to Redis + DB on every ping",  body: "Couples ingestion latency to two systems. If the DB write is slow, the pipeline backs up. 1M writes/sec will surface the slowest link." },
+      { kind: "yes", pill: "Decision", head: "Redis (live) + Kafka → Cassandra (history)",     body: "Location Service writes to Redis synchronously, publishes to Kafka fire-and-forget. A separate Cassandra consumer appends to the log. Ingestion path never blocked by history write." },
+    ],
+    note: "Why Cassandra: append-only time-series, LSM-tree optimized for write throughput, horizontal scale by adding nodes.",
+  },
+  {
+    ch: 2, type: "options",
+    title: "One Global Redis or Per-City?",
+    options: [
+      { kind: "no",  pill: "Risky",    head: "One global Redis cluster",  body: "A NYC surge slows queries for São Paulo. A failure takes down matching worldwide. Violates data residency regulations." },
+      { kind: "yes", pill: "Decision", head: "Geo-shard by city",         body: "<code>geo:drivers:nyc</code>, <code>geo:drivers:sf</code>. Kafka topics also per city. Failure blast radius contained. Regulatory requirements met naturally." },
+    ],
+  },
+
+  // ── Chapter 4: Finding a Driver ───────────────────────────────────────────
+  {
+    ch: 3, type: "chapter",
+    chNum: "Problem 2",
+    title: "Finding the Right Driver",
+    subtitle: "Given a pickup and 5M drivers, who do we offer the ride to first?",
+  },
+  {
+    ch: 3, type: "options",
+    title: "Spatial Indexing: Geohash vs H3",
+    options: [
+      { kind: "ok",  pill: "Geohash", head: "Base-32 string encoding — easy prefix lookup",  body: "Rectangular cells. Diagonal neighbors are <strong>√2× farther</strong> than edge neighbors. Inconsistent proximity near cell boundaries. Simple to implement and debug." },
+      { kind: "ok",  pill: "S2",      head: "Google's hierarchical 64-bit cell IDs",          body: "Cube-projected sphere. Better than geohash. <strong>Problem:</strong> square cells still have the diagonal-vs-edge distance issue. Non-uniform cell area." },
+      { kind: "yes", pill: "H3",      head: "Uber's hexagonal grid — equidistant neighbors",  body: "All 6 neighboring hexagon centers are the same distance from the current cell center. <strong>No direction is privileged.</strong> Level 9 ≈ 175m. Query cell + 6 neighbors: 5M drivers → hundreds of candidates." },
+    ],
+    note: "H3 is Uber's production choice for dispatch.",
+  },
+  {
+    ch: 3, type: "content",
+    title: "Why Hexagons?",
+    subtitle: "With square cells, diagonal neighbors are √2 (≈1.41×) farther than edge neighbors.",
+    observe: { warn: false, text: "With H3 hexagons, every neighbor center is <strong>exactly the same distance</strong> from the current cell center. Proximity is consistent in all 6 directions. No cell boundary artifacts." },
+    bullets: [
+      ["Query pickup H3 cell + 6 neighbors → candidate set shrinks from 5M to <strong>hundreds</strong>"],
+      ["ETA computation (expensive) only runs on those hundreds, not millions"],
+    ],
+  },
+  {
+    ch: 3, type: "content",
+    title: "Scoring Candidates",
+    observe: { warn: true, text: "A driver 800m away across a river: 12 minutes. One 1.2km away on the same street: 4 minutes. <strong>Straight-line distance is meaningless in a city. Rank by road-network ETA.</strong>" },
+    bullets: [
+      ["<strong>Road-network ETA</strong> — modified Dijkstra + contraction hierarchies, &lt;50ms per query"],
+      ["<strong>Driver rating</strong> — quality signal, especially on premium tiers"],
+      ["<strong>Acceptance rate</strong> — skip frequent rejecters to reduce cascade latency"],
+      ["<strong>Vehicle type match</strong> — UberX request shouldn't go to an Uber Black driver"],
+    ],
+  },
+  {
+    ch: 3, type: "content",
+    title: "GPS Accuracy Problem",
+    subtitle: "Urban canyon reflections cause 50–100m GPS errors. Drivers appear in rivers and buildings.",
+    options: [
+      { kind: "no",  pill: "Naive",    head: "Use raw GPS directly",                       body: "Wrong positions → wrong ETAs → misrouted drivers. Bad experience at scale." },
+      { kind: "yes", pill: "Decision", head: "Map-matching via Hidden Markov Models",       body: "Snaps GPS to the most probable road segment given the sequence of observations. Plus <strong>predictive positioning</strong>: extrapolate from last heading + speed. 83m staleness at 60 km/h → &lt;10m effective." },
+    ],
+  },
+
+  // ── Chapter 5: No Double Assignment ─────────────────────────────────────
+  {
+    ch: 4, type: "chapter",
+    chNum: "Problem 3",
+    title: "One Driver, One Rider",
+    subtitle: "Two Dispatch instances select the same driver simultaneously. How do we prevent it?",
+  },
+  {
+    ch: 4, type: "options",
+    title: "Preventing Double Assignment",
+    options: [
+      { kind: "no",  pill: "Fails",    head: "In-memory lock per Dispatch instance",            body: "Instance B has no knowledge of A's lock. Race condition guaranteed across processes. State lost on crash." },
+      { kind: "ok",  pill: "Better",   head: "DB compare-and-swap on driver status",            body: "<code>available → outstanding_request</code> — atomic, one winner. <strong>Problem:</strong> timeout recovery is in-memory. On crash, the driver stays stuck in <code>outstanding_request</code> forever." },
+      { kind: "yes", pill: "Decision", head: "Redis SETNX with TTL",                           body: "<code>SET driver:42:lock 1 EX 10 NX</code> — atomic, exactly one caller wins, <strong>auto-expires in 10s</strong> whether the service crashes or the driver ignores the offer. No manual cleanup." },
+    ],
+  },
+  {
+    ch: 4, type: "code",
+    title: "The Redis Lock",
+    code: `SET driver:42:lock 1  EX 10  NX
+
+-- NX  = only set if Not eXists — exactly one caller wins
+-- EX  = auto-expire in 10 seconds — no manual cleanup
+-- One atomic command — no race between check and set
+
+-- On driver ACCEPT:  transition to on_trip, keep lock
+-- On driver REJECT:  DEL driver:42:lock, try next candidate
+-- On service CRASH:  lock expires automatically in ≤10s`,
+    note: "Multiple Dispatch instances race safely. Exactly one wins. The TTL is the retry window — driver must respond within 10s.",
+  },
+
+  // ── Chapter 6: Resilient Workflow ────────────────────────────────────────
+  {
+    ch: 5, type: "chapter",
+    chNum: "Problem 4",
+    title: "Resilient Workflow",
+    subtitle: "The matching cascade is: lock → offer → wait 10s → retry. What if the service crashes?",
+  },
+  {
+    ch: 5, type: "options",
+    title: "Surviving a Crash Mid-Workflow",
+    options: [
+      { kind: "no",  pill: "Fails",    head: "in-memory setTimeout",           body: "Timer state gone on restart. Rider stranded with no driver being tried." },
+      { kind: "ok",  pill: "Better",   head: "Kafka delayed message",          body: "More durable. But Kafka has no native per-message delay — requires a separate delay service. Complex, fragile, non-obvious semantics." },
+      { kind: "yes", pill: "Decision", head: "Temporal durable workflow",      body: "State persisted to durable storage. On crash, replays from the last checkpoint. Built-in sleep and timeout primitives model the 10s wait naturally. Activities are retried automatically." },
+    ],
+  },
+  {
+    ch: 5, type: "code",
+    title: "The Temporal Workflow",
+    code: `workflow MatchRider(rideId):
+  candidates = findNearbyDrivers(rideId)   // activity
+  for driver in candidates:
+    acquireLock(driver.id)                  // activity
+    sendOffer(driver.id, rideId)            // activity
+    result = waitForResponse(timeout=10s)   // durable sleep
+    if result == ACCEPTED:
+      return success
+    releaseLock(driver.id)
+  fail("NO_DRIVER_AVAILABLE")`,
+    note: "Crash after sendOffer? Temporal replays from waitForResponse. No ride is lost. No driver double-booked.",
+  },
+
+  // ── Chapter 7: Real-time Updates ────────────────────────────────────────
+  {
+    ch: 6, type: "chapter",
+    chNum: "Problem 5",
+    title: "Real-time Updates",
+    subtitle: "During a trip, the rider needs to see the driver's position every 5 seconds. How?",
+  },
+  {
+    ch: 6, type: "cols",
+    title: "Polling vs WebSockets",
+    left: {
+      title: "Polling (rider requests every 5s)",
+      color: "#ef4444",
+      items: [
+        "<strong>315K trips × 12 req/min = 3.8M req/min</strong>",
+        "Mostly empty responses — driver hasn't moved yet",
+        "Up to 5 seconds of delay per update",
+        "Server stays stateless — simple",
+      ],
+    },
+    right: {
+      title: "WebSocket (server pushes updates)",
+      color: "#16a34a",
+      items: [
+        "Server pushes only when update arrives",
+        "<strong>~50ms latency</strong> — rider sees driver move in real-time",
+        "Zero wasted round-trips",
+        "Stateful servers — routing complexity",
+      ],
+    },
+    decision: "WebSockets for active trips. Polling acceptable pre-trip (lower stakes).",
+  },
+  {
+    ch: 6, type: "content",
+    title: "The WebSocket Routing Problem",
+    subtitle: "10M connections across ~1,000 servers. Offer to wrong server = silently dropped.",
+    options: [
+      { kind: "no",  pill: "Bottleneck", head: "Central registry (Redis hash / ZooKeeper)",  body: "Every message requires a registry lookup. Becomes a coordination chokepoint. Adds latency. ZooKeeper under high write volume becomes a single point of failure." },
+      { kind: "yes", pill: "Ringpop",    head: "Consistent hashing + SWIM gossip (Uber's Ringpop)", body: "<strong>Consistent hashing</strong> maps each H3 cell to an owning node — compute locally, no lookup. <strong>SWIM gossip</strong> propagates health peer-to-peer, no central coordinator. <strong>Transparent forwarding</strong> if a message hits the wrong node." },
+    ],
+  },
+
+  // ── Chapter 8: API Design ────────────────────────────────────────────────
+  {
+    ch: 7, type: "content",
+    title: "API Design — One Key Insight",
+    subtitle: "Why is fare estimation a separate step from booking?",
+    observe: { warn: false, text: "If we accept <code>POST /rides { fare: $0.01 }</code>, a malicious client sends a fake price. Instead: <code>POST /fare</code> returns a <strong>server-stored fare_id</strong> (2-min TTL). Rider confirms with fare_id — server looks up the price. Client never controls the fare amount." },
+    bullets: [
+      ["<code>POST /fare</code> → <code>{ fare_id, estimated_fare, eta }</code> — TTL 2 min"],
+      ["<code>POST /rides { fare_id }</code> → <code>{ ride_id, status: searching }</code>"],
+      ["<code>PATCH /rides/:id { action: accept|reject }</code> — driver_id from JWT, not body"],
+      ["<code>POST /drivers/location { lat, lng, heading, speed }</code> — driver_id from JWT"],
+    ],
+  },
+
+  // ── Chapter 9: The Complete Picture ─────────────────────────────────────
+  {
+    ch: 8, type: "diagram",
+    title: "The Architecture We Arrived At",
+    subtitle: "Every box below was introduced to solve a specific problem above.",
+    mermaid: `flowchart LR
+    subgraph cl[" "]
+        RA["Rider App"]
+        DA["Driver App"]
+    end
+    GW["API Gateway"]
+    subgraph sv[" "]
+        LOC["Location Svc"]
+        DSP["Dispatch Svc"]
+        TRP["Trip Svc"]
+        FAR["Fare Svc"]
+        NTF["Notification Svc"]
+    end
+    subgraph st[" "]
+        RG[("Redis Geo")]
+        RL[("Redis Lock")]
+        KF[("Kafka")]
+        PG[("PostgreSQL")]
+        CAS[("Cassandra")]
+        TMP[("Temporal")]
+    end
+    RP["Ringpop"]
+    cl -->|REST + WS| GW
+    GW --> LOC & DSP & TRP & FAR & NTF
+    LOC -->|GEOADD| RG
+    LOC -->|publish| KF
+    DSP -->|GEOSEARCH| RG
+    DSP --> RL
+    DSP <--> RP
+    KF -->|consume| CAS
+    TRP --> PG & TMP`,
+  },
+  {
+    ch: 8, type: "table",
+    title: "Data Models — What Goes Where",
+    rows: [
+      ["Trips + Fares",       "PostgreSQL",   "ACID required for billing. ~350 writes/sec — well within PG's limits."],
+      ["Live driver positions","Redis Geo",    "Ephemeral is fine — repopulates in 5s. Sub-ms GEOSEARCH."],
+      ["Driver locks",        "Redis SETNX",  "Atomic acquire + auto-expiry. No other store gives both."],
+      ["Location history",    "Cassandra",    "1M+ appends/sec, append-only, time-series partition key. LSM-tree perfect fit."],
+      ["Matching workflows",  "Temporal",     "Durable state, built-in timeouts, crash recovery."],
+    ],
+  },
+  {
+    ch: 8, type: "content",
+    title: "Stress Testing the Design",
+    subtitle: "Does every decision hold under failure?",
+    bullets: [
+      ["<strong>Redis crashes</strong> — positions repopulate in 5s from pings. Locks expire via TTL. Trips safe in PG."],
+      ["<strong>Dispatch crashes mid-workflow</strong> — Temporal replays from last checkpoint. No dropped rides."],
+      ["<strong>Driver ignores offer (10s timeout)</strong> — Temporal sleep ends, lock released, next candidate tried."],
+      ["<strong>NYC surge (concert ends)</strong> — Kafka absorbs spike. Only nyc shard stressed. SF unaffected."],
+    ],
+    note: "2015 Uber outage: DB failover → 30-min global outage. Lesson: remove the DB from the hot path. The geo index now lives exclusively in Redis.",
+  },
+  {
+    ch: 8, type: "closing",
+    title: "The Three Hard Problems",
+    items: [
+      { n: "01", color: "#ef4444", strong: "1M location writes/sec", text: "Redis Geo (live, ephemeral) + Kafka + Cassandra (durable history)" },
+      { n: "02", color: "#f97316", strong: "One driver, one rider",   text: "Redis SETNX EX 10 NX — atomic, auto-expires, no manual cleanup" },
+      { n: "03", color: "#06b6d4", strong: "Matching survives crashes", text: "Temporal durable workflow — replays from last checkpoint on restart" },
+    ],
+    note: "Everything else follows from standard distributed systems patterns.",
+  },
+];
+
+// ── RENDERER ─────────────────────────────────────────────────────────────────
+mermaid.initialize({ startOnLoad: false, theme: 'dark', themeVariables: { background: '#161922', primaryColor: '#1e2a40', primaryTextColor: '#e2e8f0', primaryBorderColor: '#252a3d', lineColor: '#4a5580', secondaryColor: '#161922', tertiaryColor: '#161922', edgeLabelBackground: '#161922' } });
+
+function bulletsHTML(arr, numbered) {
+  const tag = numbered ? 'class="bullets numbered"' : 'class="bullets"';
+  return `<ul ${tag}>${arr.map(b => `<li>${Array.isArray(b) ? b[0] : b}</li>`).join('')}</ul>`;
+}
+
+function renderSlide(s) {
+  const inner = document.createElement('div');
+  inner.className = 'slide-inner';
+
+  if (s.type === 'title') {
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      <div class="slide-subtitle">${s.subtitle}</div>
+      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
+    return `<div class="slide slide--title">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'chapter') {
+    inner.innerHTML = `
+      <div class="chapter-num" style="color:${CHAPTERS[s.ch].color}">${s.chNum}</div>
+      <div class="slide-title">${s.title}</div>
+      <div class="slide-subtitle">${s.subtitle}</div>`;
+    return `<div class="slide slide--chapter">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'callout') {
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="callout-number" style="color:${s.color}">${s.big}</div>
+      <div class="slide-title" style="font-size:28px;margin-bottom:8px">${s.unit}</div>
+      <div class="callout-label">${s.body}</div>`;
+    return `<div class="slide slide--callout">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'problem') {
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      <div class="problem-box"><div class="label">The Problem</div><p>${s.problem}</p></div>
+      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
+    return `<div class="slide">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'decision') {
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      <div class="decision-box"><div class="label">Decision</div><p>${s.decision}</p></div>
+      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
+    return `<div class="slide">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'content') {
+    const obs = s.observe ? `<div class="observe${s.observe.warn ? ' warn' : ''}">${s.observe.text}</div>` : '';
+    const buls = s.bullets ? bulletsHTML(s.bullets) : (s.bullets_numbered ? bulletsHTML(s.bullets_numbered, true) : '');
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      ${s.subtitle ? `<div class="slide-subtitle">${s.subtitle}</div>` : ''}
+      ${obs}${buls}
+      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
+    return `<div class="slide">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'options') {
+    const opts = s.options.map(o => `
+      <div class="opt ${o.kind}">
+        <span class="opt-pill">${o.pill}</span>
+        <div class="opt-body"><strong>${o.head}</strong><br>${o.body}</div>
+      </div>`).join('');
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      ${s.subtitle ? `<div class="slide-subtitle">${s.subtitle}</div>` : ''}
+      <div class="options">${opts}</div>
+      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
+    return `<div class="slide">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'code') {
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      <div class="code-block">${s.code}</div>
+      ${s.note ? `<div class="code-note">${s.note}</div>` : ''}`;
+    return `<div class="slide">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'cols') {
+    const col = (c) => `
+      <div class="col-card" style="border-color:${c.color}22;background:${c.color}09">
+        <div class="col-card-title" style="color:${c.color}">${c.title}</div>
+        <ul>${c.items.map(i => `<li>${i}</li>`).join('')}</ul>
+      </div>`;
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      <div class="cols">${col(s.left)}${col(s.right)}</div>
+      ${s.decision ? `<div class="decision-box" style="margin-top:14px"><div class="label">Decision</div><p>${s.decision}</p></div>` : ''}`;
+    return `<div class="slide">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'diagram') {
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      ${s.subtitle ? `<div class="slide-subtitle">${s.subtitle}</div>` : ''}
+      <div class="diagram-wrap" id="diag-${s._idx}"><div class="mermaid">${s.mermaid}</div></div>`;
+    return `<div class="slide">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'table') {
+    const rows = s.rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      <table class="data-table">
+        <thead><tr><th>Data</th><th>Store</th><th>Why</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    return `<div class="slide">${inner.outerHTML}</div>`;
+  }
+
+  if (s.type === 'closing') {
+    const items = s.items.map(i => `
+      <div class="closing-item">
+        <div class="closing-num" style="color:${i.color}">${i.n}</div>
+        <div class="closing-text">
+          <strong>${i.strong}</strong>
+          <span>${i.text}</span>
+        </div>
+      </div>`).join('');
+    inner.innerHTML = `
+      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
+      <div class="slide-title">${s.title}</div>
+      <div style="margin-top:28px">${items}</div>
+      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
+    return `<div class="slide">${inner.outerHTML}</div>`;
+  }
+
+  return `<div class="slide"><div class="slide-inner"><div class="slide-title">${s.title}</div></div></div>`;
+}
+
+// ── BUILD DOM ────────────────────────────────────────────────────────────────
+const stage = document.getElementById('stage');
+SLIDES.forEach((s, i) => {
+  s._idx = i;
+  const div = document.createElement('div');
+  div.innerHTML = renderSlide(s);
+  const slide = div.firstChild;
+  slide.dataset.idx = i;
+  stage.appendChild(slide);
+});
+
+const allSlides = stage.querySelectorAll('.slide');
+let current = 0;
+
+async function goTo(n) {
+  if (n < 0 || n >= SLIDES.length) return;
+  const prev = allSlides[current];
+  const next = allSlides[n];
+
+  prev.classList.add('exit');
+  setTimeout(() => { prev.classList.remove('active', 'exit'); }, 350);
+  next.classList.add('active');
+  current = n;
+  updateChrome();
+
+  // Render mermaid if needed
+  if (SLIDES[n].type === 'diagram') {
+    await mermaid.run({ nodes: next.querySelectorAll('.mermaid') });
+  }
+}
+
+function updateChrome() {
+  const s = SLIDES[current];
+  const ch = CHAPTERS[s.ch];
+  document.getElementById('chapter-dot').style.background = ch.color;
+  document.getElementById('chapter-name').style.color = ch.color;
+  document.getElementById('chapter-name').textContent = ch.name;
+  document.getElementById('slide-counter').textContent = `${current + 1} / ${SLIDES.length}`;
+  document.getElementById('progress').style.width = `${((current + 1) / SLIDES.length) * 100}%`;
+  document.getElementById('progress').style.background = ch.color;
+}
+
+// Init first slide
+allSlides[0].classList.add('active');
+updateChrome();
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); goTo(current + 1); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(current - 1); }
+  if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); goTo(current - 1); }
+});
+
+stage.addEventListener('click', e => {
+  const x = e.clientX / window.innerWidth;
+  x > 0.2 ? goTo(current + 1) : goTo(current - 1);
+});
+</script>
+</body>
+</html>
