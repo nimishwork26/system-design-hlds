@@ -7,114 +7,117 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:#0d1017;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden;user-select:none;}
 
-/* ── Chrome ── */
-#chrome{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(13,16,23,.95);border-bottom:1px solid #1e2540;display:flex;align-items:center;padding:0 20px;gap:12px;z-index:30;backdrop-filter:blur(8px);}
+#chrome{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(13,16,23,.96);border-bottom:1px solid #1e2540;display:flex;align-items:center;padding:0 20px;gap:12px;z-index:30;backdrop-filter:blur(8px);}
 #act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .5s;}
 #act-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;transition:color .5s;}
 #slide-num{margin-left:auto;font-size:11px;color:#3a4468;font-variant-numeric:tabular-nums;}
-#nav-hint{font-size:11px;color:#2e3560;}
+#nav-hint{font-size:11px;color:#2a3055;}
 .chrome-btn{font-size:11px;color:#3a4468;text-decoration:none;border:1px solid #1e2540;padding:3px 10px;border-radius:5px;transition:color .15s;}
 .chrome-btn:hover{color:#8892b0;}
 #progress{position:fixed;bottom:0;left:0;height:3px;background:#00b4d8;transition:width .4s ease,background .5s;z-index:30;}
 
-/* ── Stage ── */
 #stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;}
-#content-panel{flex:0 0 65%;height:100%;position:relative;overflow:hidden;display:flex;align-items:center;padding:32px 52px 32px 56px;}
-#map-panel{flex:0 0 35%;height:100%;display:flex;flex-direction:column;justify-content:center;padding:24px 28px 24px 0;}
+#content-panel{flex:0 0 62%;height:100%;position:relative;overflow:hidden;display:flex;align-items:center;padding:28px 44px 28px 52px;}
+#map-panel{flex:0 0 38%;height:100%;display:flex;flex-direction:column;justify-content:center;padding:20px 24px 20px 0;}
 #map-panel.hidden{display:none;}
 #content-panel.full{flex:0 0 100%;padding:0;}
 
-/* ── Map panel ── */
-.map-title{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#252a3d;margin-bottom:10px;text-align:center;}
-#map-svg{width:100%;height:auto;}
-.map-legend{display:flex;flex-direction:column;gap:5px;margin-top:14px;}
-.leg-row{display:flex;align-items:center;gap:7px;font-size:10px;color:#2e3560;}
-.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.map-title{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#252a3d;margin-bottom:8px;padding-left:2px;}
+#map-svg{width:100%;height:auto;display:block;}
+.map-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;padding-left:2px;}
+.leg-row{display:flex;align-items:center;gap:5px;font-size:10px;color:#2a3055;}
+.leg-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
 
-/* ── Slide types ── */
-.slide{width:100%;opacity:0;transform:translateY(16px);transition:opacity .38s ease,transform .38s ease;pointer-events:none;position:absolute;}
+/* ── Slide base ── */
+.slide{width:100%;opacity:0;transform:translateY(14px);transition:opacity .36s ease,transform .36s ease;pointer-events:none;position:absolute;}
 .slide.active{opacity:1;transform:translateY(0);pointer-events:all;position:relative;}
-.slide.exit{opacity:0;transform:translateY(-16px);}
+.slide.exit{opacity:0;transform:translateY(-14px);}
+.s-act{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:inline-block;}
+.s-title{font-size:32px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:8px;}
+.s-sub{font-size:16px;color:#8892b0;line-height:1.6;}
+.s-note{margin-top:18px;font-size:12px;color:#3a4468;border-top:1px solid #1e2540;padding-top:10px;}
 
-.s-act{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;display:inline-block;}
-.s-title{font-size:34px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:10px;}
-.s-sub{font-size:17px;color:#8892b0;line-height:1.6;margin-bottom:6px;}
-.s-note{margin-top:20px;font-size:12px;color:#3a4468;border-top:1px solid #1e2540;padding-top:10px;}
-
-/* Title (full screen) */
-.slide--title{text-align:center;justify-content:center;align-items:center;flex-direction:column;padding:60px;}
-.slide--title .s-title{font-size:52px;margin-bottom:16px;}
+/* Title full-screen */
+.slide--title{text-align:center;display:flex!important;flex-direction:column;justify-content:center;align-items:center;padding:60px;}
+.slide--title .s-title{font-size:48px;margin-bottom:14px;}
 
 /* Callout */
-.slide--callout .big-num{font-size:68px;font-weight:800;line-height:1;margin-bottom:6px;}
-.slide--callout .big-unit{font-size:20px;color:#8892b0;margin-bottom:16px;}
+.slide--callout .big-num{font-size:64px;font-weight:800;line-height:1;margin-bottom:4px;}
+.slide--callout .big-unit{font-size:19px;color:#8892b0;margin-bottom:14px;}
 
 /* Break */
-.break-box{border-left:3px solid #dc2626;background:rgba(220,38,38,.07);border-radius:0 10px 10px 0;padding:16px 20px;margin-top:16px;}
-.break-box p{font-size:17px;color:#fca5a5;line-height:1.65;}
+.break-box{border-left:3px solid #dc2626;background:rgba(220,38,38,.07);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:14px;}
+.break-box p{font-size:16px;color:#fca5a5;line-height:1.65;}
 
-/* Decision */
-.why-nots{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;}
-.why-pill{background:#1a0d06;border:1px solid #4a2010;border-radius:6px;padding:5px 12px;font-size:12px;color:#fdba74;}
-.why-pill span{color:#6b3010;margin-right:4px;}
-.dec-box{border-left:3px solid #16a34a;background:rgba(22,163,74,.07);border-radius:0 10px 10px 0;padding:16px 20px;margin-top:4px;}
-.dec-box p{font-size:16px;color:#86efac;line-height:1.65;}
+/* ── Options (the main fix) ── */
+.opts{display:flex;flex-direction:column;gap:8px;margin:12px 0 10px;}
+.opt{border-radius:8px;padding:11px 15px;border:1px solid;}
+.opt.no {background:#120606;border-color:#3a0e0e;}
+.opt.partial{background:#121003;border-color:#3a2e08;}
+.opt-name{font-size:12.5px;font-weight:600;color:#e2e8f0;margin-bottom:3px;}
+.opt-appeal{font-size:11.5px;color:#4a5580;margin-bottom:5px;font-style:italic;}
+.opt-verdict{font-size:12.5px;line-height:1.55;}
+.opt.no .opt-verdict{color:#f87171;}
+.opt.partial .opt-verdict{color:#fbbf24;}
+.opt-pill{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:3px;margin-right:5px;vertical-align:middle;}
+.opt.no .opt-pill{background:#3a0e0e;color:#f87171;}
+.opt.partial .opt-pill{background:#3a2e08;color:#fbbf24;}
 
-/* Insight (2-col bad/good) */
-.insight-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
-.ins-col{border-radius:10px;padding:16px 18px;}
-.ins-col.bad{background:#140806;border:1px solid #3a1010;}
-.ins-col.good{background:#081408;border:1px solid #103a10;}
-.ins-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+/* Decision box */
+.dec-box{border-left:3px solid #16a34a;background:rgba(22,163,74,.07);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:4px;}
+.dec-label{font-size:9px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;}
+.dec-box p{font-size:15px;color:#86efac;line-height:1.65;}
+
+/* Insight 2-col */
+.insight-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.ins-col{border-radius:8px;padding:14px 16px;}
+.ins-col.bad{background:#120606;border:1px solid #3a1010;}
+.ins-col.good{background:#060e06;border:1px solid #0e3010;}
+.ins-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;}
 .ins-col.bad .ins-head{color:#ef4444;}
 .ins-col.good .ins-head{color:#16a34a;}
-.ins-col p{font-size:14px;line-height:1.6;color:#8892b0;}
+.ins-col p{font-size:13.5px;line-height:1.6;color:#8892b0;}
 .ins-col p strong{color:#e2e8f0;}
 
-/* Bullets (requirements, API) */
-.item-list{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
-.item-row{display:flex;gap:12px;align-items:flex-start;}
-.item-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:3px 9px;border-radius:5px;background:#1e2a3a;color:#7dd3fc;white-space:nowrap;margin-top:2px;flex-shrink:0;}
-.item-text{font-size:15px;color:#8892b0;line-height:1.5;}
+/* Item list */
+.item-list{margin-top:12px;display:flex;flex-direction:column;gap:9px;}
+.item-row{display:flex;gap:10px;align-items:flex-start;}
+.item-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:3px 8px;border-radius:5px;background:#1e2a3a;color:#7dd3fc;white-space:nowrap;margin-top:2px;flex-shrink:0;}
+.item-text{font-size:14.5px;color:#8892b0;line-height:1.5;}
 .item-text strong{color:#e2e8f0;}
 
 /* Agenda */
-.agenda-list{margin-top:18px;display:flex;flex-direction:column;gap:12px;}
-.ag-row{display:flex;gap:14px;align-items:flex-start;}
-.ag-num{font-size:24px;font-weight:800;line-height:1;flex-shrink:0;width:36px;}
-.ag-text{font-size:16px;color:#8892b0;padding-top:4px;line-height:1.4;}
+.agenda-list{margin-top:16px;display:flex;flex-direction:column;gap:11px;}
+.ag-row{display:flex;gap:12px;align-items:flex-start;}
+.ag-num{font-size:22px;font-weight:800;line-height:1;flex-shrink:0;width:34px;}
+.ag-text{font-size:15px;color:#8892b0;padding-top:3px;line-height:1.4;}
 
 /* Code */
-.code-block{background:#0f1420;border:1px solid #1e2540;border-radius:10px;padding:18px 20px;font-family:'Cascadia Code','Fira Code',monospace;font-size:13px;color:#7dd3fc;line-height:1.75;margin-top:14px;white-space:pre;}
+.code-block{background:#0a0e18;border:1px solid #1e2540;border-radius:10px;padding:16px 18px;font-family:'Cascadia Code','Fira Code',monospace;font-size:12.5px;color:#7dd3fc;line-height:1.8;margin-top:12px;white-space:pre;}
+.code-note{margin-top:10px;font-size:13px;color:#5a6494;line-height:1.5;}
 
 /* Table */
-.data-tbl{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px;}
-.data-tbl th{padding:8px 12px;background:#0f1420;color:#3a4468;font-size:10px;text-transform:uppercase;letter-spacing:.06em;text-align:left;}
-.data-tbl td{padding:10px 12px;border-bottom:1px solid #1a1f2e;line-height:1.4;}
+.data-tbl{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px;}
+.data-tbl th{padding:7px 11px;background:#0a0e18;color:#3a4468;font-size:10px;text-transform:uppercase;letter-spacing:.06em;text-align:left;}
+.data-tbl td{padding:9px 11px;border-bottom:1px solid #181d2c;line-height:1.4;}
 .data-tbl tr:last-child td{border:none;}
-.data-tbl td:first-child{color:#7dd3fc;font-weight:600;font-size:13px;}
-.data-tbl td:last-child{color:#6b7594;font-size:13px;}
+.data-tbl td:first-child{color:#7dd3fc;font-weight:600;font-size:12.5px;}
+.data-tbl td:nth-child(2){color:#c3cfe2;}
+.data-tbl td:last-child{color:#5a6494;}
 
 /* Failures */
-.fail-list{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
-.fail-row{display:flex;gap:12px;padding:12px 16px;border-radius:8px;border:1px solid #16a34a30;background:#081408;}
-.fail-check{color:#16a34a;font-size:16px;flex-shrink:0;padding-top:1px;}
-.fail-scenario{font-size:13px;font-weight:600;color:#c3cfe2;margin-bottom:3px;}
-.fail-result{font-size:13px;color:#6b7594;line-height:1.4;}
+.fail-list{margin-top:12px;display:flex;flex-direction:column;gap:7px;}
+.fail-row{display:flex;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid rgba(22,163,74,.2);background:rgba(22,163,74,.04);}
+.fail-check{color:#16a34a;font-size:15px;flex-shrink:0;padding-top:1px;}
+.fail-scenario{font-size:12.5px;font-weight:600;color:#c3cfe2;margin-bottom:2px;}
+.fail-result{font-size:12.5px;color:#5a6494;line-height:1.4;}
 
 /* Closing */
-.closing-wrap{width:100%;max-width:800px;margin:0 auto;padding:60px;}
-.closing-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
-.closing-before{opacity:.5;}
-.closing-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#3a4468;margin-bottom:16px;}
-.closing-items{margin-top:40px;display:flex;flex-direction:column;gap:20px;}
-.closing-item{display:flex;gap:16px;align-items:flex-start;}
-.closing-n{font-size:28px;font-weight:800;line-height:1;flex-shrink:0;width:38px;}
-.closing-text strong{display:block;font-size:17px;color:#e2e8f0;margin-bottom:3px;}
-.closing-text span{font-size:14px;color:#6b7594;}
-
-/* Animations */
-@keyframes pulse-red{0%,100%{opacity:1;}50%{opacity:.5;}}
+.closing-items{margin-top:32px;display:flex;flex-direction:column;gap:18px;}
+.closing-item{display:flex;gap:14px;align-items:flex-start;}
+.closing-n{font-size:26px;font-weight:800;line-height:1;flex-shrink:0;width:36px;}
+.closing-text strong{display:block;font-size:16px;color:#e2e8f0;margin-bottom:3px;}
+.closing-text span{font-size:13.5px;color:#5a6494;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -123,7 +126,7 @@ body{background:#0d1017;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
   <div id="act-dot"></div>
   <span id="act-label"></span>
   <span id="slide-num"></span>
-  <span id="nav-hint">Enter / → next &nbsp;·&nbsp; ← / Shift+Tab back &nbsp;·&nbsp; click to advance</span>
+  <span id="nav-hint">Enter / → next &nbsp;·&nbsp; ← back &nbsp;·&nbsp; click to advance</span>
   <a href="hld.html" class="chrome-btn">Full HLD</a>
 </div>
 
@@ -131,64 +134,81 @@ body{background:#0d1017;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-seri
   <div id="content-panel"><div id="slide-mount"></div></div>
   <div id="map-panel">
     <div class="map-title">Architecture — current state</div>
-    <svg id="map-svg" viewBox="0 0 312 174" xmlns="http://www.w3.org/2000/svg"></svg>
+    <svg id="map-svg" viewBox="0 0 314 256" xmlns="http://www.w3.org/2000/svg"></svg>
     <div class="map-legend">
       <div class="leg-row"><div class="leg-dot" style="background:#1e2540"></div>not yet introduced</div>
       <div class="leg-row"><div class="leg-dot" style="background:#374162"></div>in the system</div>
-      <div class="leg-row" id="leg-active"><div class="leg-dot" style="background:#00b4d8"></div>focus of this slide</div>
-      <div class="leg-row"><div class="leg-dot" style="background:#dc2626"></div>breaking point</div>
+      <div class="leg-row" id="leg-active"><div class="leg-dot" style="background:#00b4d8"></div>focus</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#dc2626"></div>breaking</div>
     </div>
   </div>
 </div>
 <div id="progress"></div>
 
 <script>
-// ── MAP NODE DEFINITIONS ──────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// MAP — two non-overlapping sections in the same SVG
+//
+//  Section A (naive design):  y=0..52    — rider_n, driver_n, server_n, db_n
+//  Section B (production):    y=62..256  — rider, driver, gateway, services, storage
+//
+//  Nodes in different columns never share y-range within their own section.
+// ─────────────────────────────────────────────────────────────────────────────
 const N = {
-  rider:      {x:2,   y:34,  w:52, h:20, label:"Rider"},
-  driver:     {x:2,   y:62,  w:52, h:20, label:"Driver"},
-  server_n:   {x:70,  y:48,  w:56, h:20, label:"API Server"},
-  db_n:       {x:144, y:48,  w:56, h:20, label:"Database"},
-  gateway:    {x:70,  y:48,  w:60, h:20, label:"Gateway"},
-  location:   {x:148, y:4,   w:70, h:20, label:"Location Svc"},
-  dispatch:   {x:148, y:32,  w:70, h:20, label:"Dispatch Svc"},
-  trip:       {x:148, y:60,  w:70, h:20, label:"Trip Svc"},
-  fare:       {x:148, y:88,  w:70, h:20, label:"Fare Svc"},
-  ringpop:    {x:148, y:116, w:70, h:20, label:"Ringpop"},
-  redis_geo:  {x:230, y:4,   w:78, h:20, label:"Redis Geo"},
-  redis_lock: {x:230, y:32,  w:78, h:20, label:"Redis Lock"},
-  kafka:      {x:230, y:60,  w:78, h:20, label:"Kafka"},
-  postgres:   {x:230, y:88,  w:78, h:20, label:"PostgreSQL"},
-  cassandra:  {x:230, y:116, w:78, h:20, label:"Cassandra"},
-  temporal:   {x:230, y:144, w:78, h:20, label:"Temporal"},
+  // ── Section A: naive (y 0–52) ──────────────────────────────────────────────
+  rider_n:   {x:2,   y:6,   w:54, h:22, label:"Rider"},
+  driver_n:  {x:2,   y:32,  w:54, h:22, label:"Driver"},
+  server_n:  {x:72,  y:19,  w:60, h:22, label:"API Server"},   // center of rider_n/driver_n
+  db_n:      {x:152, y:19,  w:72, h:22, label:"Database"},
+
+  // ── Section B: production (y 62–256) ─────────────────────────────────────
+  // Clients
+  rider:     {x:2,   y:76,  w:54, h:22, label:"Rider"},
+  driver:    {x:2,   y:106, w:54, h:22, label:"Driver"},
+  // Entry — vertically centered between the two clients
+  gateway:   {x:72,  y:91,  w:60, h:22, label:"Gateway"},
+  // Services — each node at its own y, 30px spacing
+  location:  {x:148, y:62,  w:72, h:22, label:"Location Svc"},
+  dispatch:  {x:148, y:92,  w:72, h:22, label:"Dispatch Svc"},
+  trip:      {x:148, y:122, w:72, h:22, label:"Trip Svc"},
+  fare:      {x:148, y:152, w:72, h:22, label:"Fare Svc"},
+  ringpop:   {x:148, y:182, w:72, h:22, label:"Ringpop"},
+  // Storage — same y-alignment as services
+  redis_geo: {x:234, y:62,  w:76, h:22, label:"Redis Geo"},
+  redis_lock:{x:234, y:92,  w:76, h:22, label:"Redis Lock"},
+  kafka:     {x:234, y:122, w:76, h:22, label:"Kafka"},
+  postgres:  {x:234, y:152, w:76, h:22, label:"PostgreSQL"},
+  cassandra: {x:234, y:182, w:76, h:22, label:"Cassandra"},
+  temporal:  {x:234, y:212, w:76, h:22, label:"Temporal"},
 };
 
+// Connection pairs [from, to]
 const CONNS = [
-  ['rider','server_n'],['driver','server_n'],['server_n','db_n'],
-  ['rider','gateway'],['driver','gateway'],
-  ['gateway','location'],['gateway','dispatch'],['gateway','trip'],['gateway','fare'],
+  // Section A
+  ['rider_n','server_n'], ['driver_n','server_n'], ['server_n','db_n'],
+  // Section B
+  ['rider','gateway'],    ['driver','gateway'],
+  ['gateway','location'], ['gateway','dispatch'], ['gateway','trip'], ['gateway','fare'],
   ['location','redis_geo'],['location','kafka'],
   ['dispatch','redis_geo'],['dispatch','redis_lock'],['dispatch','ringpop'],
   ['kafka','cassandra'],
-  ['trip','postgres'],['trip','temporal'],
+  ['trip','postgres'],    ['trip','temporal'],
 ];
 
-const PROD_NODES = ['gateway','location','dispatch','trip','fare','ringpop','redis_geo','redis_lock','kafka','postgres','cassandra','temporal'];
-const NAIVE_NODES = ['server_n','db_n'];
+// ── Slide shorthand sets ──────────────────────────────────────────────────────
+const NAIVE = ['rider_n','driver_n','server_n','db_n'];
+const ALL   = ['rider','driver','gateway','location','dispatch','trip','fare',
+               'redis_geo','redis_lock','kafka','postgres','cassandra','temporal','ringpop'];
 
-// ── BUILD MAP SVG ─────────────────────────────────────────────────────────────
-const SVG_NS = 'http://www.w3.org/2000/svg';
-function svgEl(tag, attrs={}) {
-  const el = document.createElementNS(SVG_NS, tag);
-  Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k, v));
-  return el;
-}
+// ── Build SVG ─────────────────────────────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag,attrs={}){const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));return e;}
 
-(function buildMap() {
+(function buildMap(){
   const svg = document.getElementById('map-svg');
 
-  // Glow filters
-  const defs = svgEl('defs');
+  // Filters
+  const defs = el('defs');
   defs.innerHTML = `
     <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
       <feGaussianBlur stdDeviation="2.5" result="b"/>
@@ -200,488 +220,551 @@ function svgEl(tag, attrs={}) {
     </filter>`;
   svg.appendChild(defs);
 
-  // Connection lines
-  const cg = svgEl('g', {id:'conns'});
-  CONNS.forEach(([a,b]) => {
-    const na = N[a], nb = N[b];
-    if (!na || !nb) return;
-    const line = svgEl('line', {
+  // Section A label
+  const la = el('text',{x:2,y:2,'font-size':'6.5','font-family':'Segoe UI,system-ui,sans-serif',
+    'font-weight':'600','text-anchor':'start','dominant-baseline':'hanging'});
+  la.style.fill='#1e2540'; la.textContent='NAIVE DESIGN'; svg.appendChild(la);
+
+  // Section divider
+  const div = el('line',{x1:0,y1:57,x2:314,y2:57,stroke:'#1a1f30','stroke-width':'1','stroke-dasharray':'3,4'});
+  svg.appendChild(div);
+
+  // Section B label
+  const lb = el('text',{x:2,y:59,'font-size':'6.5','font-family':'Segoe UI,system-ui,sans-serif',
+    'font-weight':'600','text-anchor':'start','dominant-baseline':'hanging'});
+  lb.style.fill='#1e2540'; lb.textContent='PRODUCTION SYSTEM'; svg.appendChild(lb);
+
+  // Connections
+  const cg = el('g',{id:'conns'});
+  CONNS.forEach(([a,b])=>{
+    const na=N[a],nb=N[b]; if(!na||!nb) return;
+    const line = el('line',{
       id:`c-${a}-${b}`,
-      x1: na.x + na.w, y1: na.y + na.h/2,
-      x2: nb.x,        y2: nb.y + nb.h/2,
-      stroke:'#1e2540', 'stroke-width':'1',
+      x1:na.x+na.w, y1:na.y+na.h/2,
+      x2:nb.x,      y2:nb.y+nb.h/2,
+      stroke:'#1e2540','stroke-width':'1',
     });
-    line.style.transition = 'stroke .5s, opacity .5s';
-    line.style.opacity = '0';
+    line.style.transition='stroke .45s,opacity .45s';
+    line.style.opacity='0';
     cg.appendChild(line);
   });
   svg.appendChild(cg);
 
-  // Node groups
-  const ng = svgEl('g', {id:'nodes'});
-  Object.entries(N).forEach(([id, n]) => {
-    const g = svgEl('g', {id:`nd-${id}`});
-    const rect = svgEl('rect', {id:`nd-${id}-r`, x:n.x, y:n.y, width:n.w, height:n.h, rx:'5'});
-    rect.style.transition = 'fill .45s, stroke .45s, filter .45s';
-    const txt = svgEl('text', {
-      id:`nd-${id}-t`, x:n.x+n.w/2, y:n.y+n.h/2,
-      'text-anchor':'middle', 'dominant-baseline':'central',
-      'font-size':'7.2', 'font-family':'Segoe UI,system-ui,sans-serif', 'font-weight':'500'
+  // Nodes
+  const ng = el('g',{id:'nodes'});
+  Object.entries(N).forEach(([id,n])=>{
+    const g = el('g',{id:`nd-${id}`});
+    const r = el('rect',{id:`nd-${id}-r`,x:n.x,y:n.y,width:n.w,height:n.h,rx:'5'});
+    r.style.transition='fill .45s,stroke .45s,filter .45s';
+    const t = el('text',{
+      id:`nd-${id}-t`,x:n.x+n.w/2,y:n.y+n.h/2,
+      'text-anchor':'middle','dominant-baseline':'central',
+      'font-size':'7','font-family':'Segoe UI,system-ui,sans-serif','font-weight':'500',
     });
-    txt.style.transition = 'fill .45s';
-    txt.textContent = n.label;
-    g.appendChild(rect);
-    g.appendChild(txt);
-    ng.appendChild(g);
+    t.style.transition='fill .45s';
+    t.textContent=n.label;
+    g.appendChild(r); g.appendChild(t); ng.appendChild(g);
   });
   svg.appendChild(ng);
 
-  // Set everything to ghost initially
-  Object.keys(N).forEach(id => setNode(id, 'ghost'));
+  // Init all ghost
+  Object.keys(N).forEach(id=>setNode(id,'ghost'));
 })();
 
-function setNode(id, state, color) {
-  const r = document.getElementById(`nd-${id}-r`);
-  const t = document.getElementById(`nd-${id}-t`);
-  if (!r || !t) return;
-  if (state === 'ghost') {
-    r.style.fill='#0d1017'; r.style.stroke='#161c2a'; r.style.filter='none';
-    t.style.fill='#1e2540';
-  } else if (state === 'visible') {
-    r.style.fill='#141c2a'; r.style.stroke='#2a3358'; r.style.filter='none';
-    t.style.fill='#5a6494';
-  } else if (state === 'active') {
-    const c = color||'#00b4d8';
-    r.style.fill=hexA(c,.12); r.style.stroke=c; r.style.filter='url(#glow)';
-    t.style.fill=c;
-  } else if (state === 'broken') {
-    r.style.fill='#1a0606'; r.style.stroke='#dc2626'; r.style.filter='url(#glow-red)';
-    t.style.fill='#f87171';
-  }
+// ── Node state helpers ────────────────────────────────────────────────────────
+function hexA(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},${a})`;}
+
+function setNode(id,state,color){
+  const r=document.getElementById(`nd-${id}-r`);
+  const t=document.getElementById(`nd-${id}-t`);
+  if(!r||!t) return;
+  if(state==='ghost')  { r.style.fill='#0d1017';  r.style.stroke='#14192a'; r.style.filter='none'; t.style.fill='#1a2038'; }
+  if(state==='visible'){ r.style.fill='#131b2a';  r.style.stroke='#283050'; r.style.filter='none'; t.style.fill='#566080'; }
+  if(state==='active') { const c=color||'#00b4d8'; r.style.fill=hexA(c,.13); r.style.stroke=c; r.style.filter='url(#glow)'; t.style.fill=c; }
+  if(state==='broken') { r.style.fill='#1a0606'; r.style.stroke='#dc2626'; r.style.filter='url(#glow-red)'; t.style.fill='#f87171'; }
 }
 
-function hexA(hex, a) {
-  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
-  return `rgba(${r},${g},${b},${a})`;
-}
-
-function updateMap(state) {
-  const show = new Set(state.show||[]);
-  const broken = new Set(state.broken||[]);
-
-  Object.keys(N).forEach(id => {
-    if (broken.has(id))       setNode(id,'broken');
-    else if (id===state.active) setNode(id,'active',state.activeColor||'#00b4d8');
-    else if (show.has(id))    setNode(id,'visible');
+function updateMap(state){
+  const show=new Set(state.show||[]);
+  const broken=new Set(state.broken||[]);
+  Object.keys(N).forEach(id=>{
+    if(broken.has(id))        setNode(id,'broken');
+    else if(id===state.active) setNode(id,'active',state.activeColor);
+    else if(show.has(id))     setNode(id,'visible');
     else                      setNode(id,'ghost');
   });
-
-  // Update connection lines
-  CONNS.forEach(([a,b]) => {
-    const line = document.getElementById(`c-${a}-${b}`);
-    if (!line) return;
-    const aVis = show.has(a)||broken.has(a)||a===state.active;
-    const bVis = show.has(b)||broken.has(b)||b===state.active;
-    if (aVis && bVis) {
-      line.style.opacity = '0.5';
-      if (broken.has(b)||broken.has(a)) line.setAttribute('stroke','#3a1010');
-      else if (b===state.active||a===state.active) line.setAttribute('stroke', hexA(state.activeColor||'#00b4d8',.5));
-      else line.setAttribute('stroke','#252a44');
+  CONNS.forEach(([a,b])=>{
+    const line=document.getElementById(`c-${a}-${b}`); if(!line) return;
+    const av=show.has(a)||broken.has(a)||a===state.active;
+    const bv=show.has(b)||broken.has(b)||b===state.active;
+    if(av&&bv){
+      line.style.opacity='.5';
+      const c=state.activeColor||'#00b4d8';
+      if(broken.has(a)||broken.has(b)) line.setAttribute('stroke','#3a1010');
+      else if(a===state.active||b===state.active) line.setAttribute('stroke',hexA(c,.6));
+      else line.setAttribute('stroke','#243050');
     } else {
-      line.style.opacity = '0';
+      line.style.opacity='0';
     }
   });
 }
 
-// ── SLIDE DATA ────────────────────────────────────────────────────────────────
-const ALL = ['rider','driver','gateway','location','dispatch','trip','fare','ringpop','redis_geo','redis_lock','kafka','postgres','cassandra','temporal'];
-const NAIVE = ['rider','driver','server_n','db_n'];
-const BROKEN_ALL = ['rider','driver','server_n','db_n'];
-
+// ─────────────────────────────────────────────────────────────────────────────
+// SLIDES
+// ─────────────────────────────────────────────────────────────────────────────
 const SLIDES = [
-  // ── ACT 1: THE BET ───────────────────────────────────────────────────────
-  {
-    act:'',actColor:'#00b4d8',full:true,
-    map:{show:[],active:null,broken:[]},
-    html:`<div class="slide slide--title">
-      <div class="s-act" style="color:#00b4d8">System Design Interview</div>
-      <div class="s-title">Designing Uber</div>
-      <div class="s-sub">Every component earned through a problem.<br>Not one assumed upfront.</div>
-      <div class="s-note" style="margin-top:32px">Enter / → to advance &nbsp;·&nbsp; ← to go back &nbsp;·&nbsp; click right side to advance</div>
-    </div>`
-  },
-  {
-    act:'The Stakes',actColor:'#00b4d8',
-    map:{show:['rider','driver'],active:null,broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#00b4d8">The Stakes</div>
-      <div class="s-title">Two users. One contract.</div>
-      <div class="item-list">
-        <div class="item-row"><span class="item-label">Rider</span><span class="item-text">Request a ride, see fare + ETA before confirming, track driver, cancel.</span></div>
-        <div class="item-row"><span class="item-label">Driver</span><span class="item-text">Go online/offline, accept or reject ride offers, stream GPS every ~5s.</span></div>
-        <div class="item-row"><span class="item-label">System</span><span class="item-text">Match in <strong>&lt;1 second</strong> · 99.99% uptime · <strong>one driver per rider, always</strong>.</span></div>
-        <div class="item-row"><span class="item-label" style="background:#1f0808;color:#f87171">Out of scope</span><span class="item-text">Payments, surge algorithm, maps engine, driver KYC.</span></div>
-      </div>
-    </div>`
-  },
-  {
-    act:'The Stakes',actColor:'#ef4444',
-    map:{show:['rider','driver'],active:null,broken:[]},
-    html:`<div class="slide slide--callout">
-      <div class="s-act" style="color:#ef4444">The Constraint That Shapes Everything</div>
-      <div class="big-num" style="color:#ef4444">1,000,000</div>
-      <div class="big-unit">location writes / second</div>
-      <div class="s-sub" style="max-width:480px">5M active drivers × one GPS ping every 5 seconds.</div>
-      <div class="s-sub" style="max-width:480px;margin-top:8px">Almost every architecture decision below traces back to this single number.</div>
-    </div>`
-  },
 
-  // ── ACT 2: THE NAIVE DESIGN BREAKS ───────────────────────────────────────
-  {
-    act:'Naive Design',actColor:'#f59e0b',
-    map:{show:['rider','driver','server_n','db_n'],active:null,broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#f59e0b">Naive Design</div>
-      <div class="s-title">Start with the simplest thing.</div>
-      <div class="s-sub" style="margin-top:8px">Rider + Driver apps talk to one API server. Drivers POST location every 5s. Server queries the database for nearby drivers and assigns one.</div>
-      <div class="s-sub" style="margin-top:16px;color:#3a4468">This is a valid starting point. Now let's find where it breaks.</div>
-      <div class="s-note">Watch the map on the right — it shows the current system state.</div>
-    </div>`
-  },
-  {
-    act:'Break #1',actColor:'#ef4444',
-    map:{show:NAIVE,active:null,broken:['db_n']},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#ef4444">Break #1</div>
-      <div class="s-title">The database can't keep up.</div>
-      <div class="break-box"><p>5M drivers × 1 update/5s = <strong>1,000,000 writes/sec</strong>.<br>PostgreSQL handles ~10K. We are <strong>100× over the limit</strong> before a single rider has booked anything.<br><br>DynamoDB on-demand at this volume: $200K+/day in write capacity alone.</p></div>
-      <div class="s-note">Database highlighted red on the map.</div>
-    </div>`
-  },
-  {
-    act:'Break #2',actColor:'#ef4444',
-    map:{show:NAIVE,active:null,broken:['db_n']},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#ef4444">Break #2</div>
-      <div class="s-title">Proximity queries are too slow.</div>
-      <div class="break-box"><p>"Find drivers within 5km" on 5M rows without spatial indexing is a <strong>full table scan</strong>.<br><br>Add a spatial index — now <strong>re-indexing under a 1M writes/sec write storm</strong> degrades the entire database.</p></div>
-    </div>`
-  },
-  {
-    act:'Break #3',actColor:'#ef4444',
-    map:{show:NAIVE,active:null,broken:['server_n','db_n']},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#ef4444">Break #3</div>
-      <div class="s-title">Two servers. Same driver.</div>
-      <div class="break-box"><p>We run multiple API instances for scale. Two instances simultaneously select the <strong>same available driver</strong> for two different riders.<br><br>Without coordination, one rider's driver simply never shows up.</p></div>
-    </div>`
-  },
-  {
-    act:'Break #4',actColor:'#ef4444',
-    map:{show:NAIVE,active:null,broken:BROKEN_ALL},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#ef4444">Break #4</div>
-      <div class="s-title">Polling buries the server.</div>
-      <div class="break-box"><p>Riders poll "where's my driver?" every 5s during trips.<br><strong>315K concurrent trips × 12 req/min = 3.8M requests/min</strong> of mostly empty responses.<br><br>Every round-trip is wasted server capacity.</p></div>
-    </div>`
-  },
-  {
-    act:'Design Agenda',actColor:'#f59e0b',
-    map:{show:NAIVE,active:null,broken:BROKEN_ALL},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#f59e0b">Design Agenda</div>
-      <div class="s-title">Four breaks. Four fixes.</div>
-      <div class="agenda-list">
-        <div class="ag-row"><div class="ag-num" style="color:#ef4444">01</div><div class="ag-text">1M location writes/sec — the database can't handle it</div></div>
-        <div class="ag-row"><div class="ag-num" style="color:#8b5cf6">02</div><div class="ag-text">Finding the best driver nearby in under 100ms</div></div>
-        <div class="ag-row"><div class="ag-num" style="color:#f97316">03</div><div class="ag-text">One driver, one rider — no race condition</div></div>
-        <div class="ag-row"><div class="ag-num" style="color:#16a34a">04</div><div class="ag-text">Real-time tracking without 3.8M empty polls/min</div></div>
-      </div>
-      <div class="s-note">Stating the agenda in an interview shows structure. The interviewer knows you won't miss anything.</div>
-    </div>`
-  },
+// ── ACT 1: THE BET ────────────────────────────────────────────────────────────
+{
+  act:'',actColor:'#00b4d8',full:true,
+  map:{show:[],active:null,broken:[]},
+  html:`<div class="slide slide--title">
+    <div class="s-act" style="color:#00b4d8">System Design Interview</div>
+    <div class="s-title">Designing Uber</div>
+    <div class="s-sub">Every component earned through a problem.<br>Not one assumed upfront.</div>
+    <div class="s-note" style="margin-top:28px;border:none">Enter / → advance &nbsp;·&nbsp; ← back &nbsp;·&nbsp; click right side to advance</div>
+  </div>`
+},
+{
+  act:'The Stakes',actColor:'#00b4d8',
+  map:{show:['rider_n','driver_n'],active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">The Stakes</div>
+    <div class="s-title">Two users. One contract.</div>
+    <div class="item-list">
+      <div class="item-row"><span class="item-label">Rider</span><span class="item-text">Request a ride, see fare + ETA before confirming, track driver in real-time, cancel.</span></div>
+      <div class="item-row"><span class="item-label">Driver</span><span class="item-text">Go online/offline, accept or reject ride offers, stream GPS every ~5s.</span></div>
+      <div class="item-row"><span class="item-label">System</span><span class="item-text">Match in <strong>&lt;1 second</strong> · 99.99% uptime · <strong>one driver per rider, always</strong>.</span></div>
+      <div class="item-row"><span class="item-label" style="background:#1f0808;color:#f87171">Out of scope</span><span class="item-text">Payments, surge algorithm, maps/routing engine, driver KYC.</span></div>
+    </div>
+  </div>`
+},
+{
+  act:'The Stakes',actColor:'#ef4444',
+  map:{show:['rider_n','driver_n'],active:null,broken:[]},
+  html:`<div class="slide slide--callout">
+    <div class="s-act" style="color:#ef4444">The Constraint That Shapes Everything</div>
+    <div class="big-num" style="color:#ef4444">1,000,000</div>
+    <div class="big-unit">location writes / second</div>
+    <div class="s-sub" style="max-width:460px">5 million active drivers × one GPS ping every 5 seconds.</div>
+    <div class="s-sub" style="max-width:460px;margin-top:8px">Every architecture decision below traces back to this single number. Keep it in mind.</div>
+  </div>`
+},
 
-  // ── ACT 3: FIX IT PIECE BY PIECE ─────────────────────────────────────────
-  {
-    act:'Fix #1 — Location',actColor:'#ef4444',
-    map:{show:['rider','driver','gateway','location','redis_geo'],active:'redis_geo',activeColor:'#ef4444',broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#ef4444">Fix #1 — Location at Scale</div>
-      <div class="s-title">Redis Geo as the live driver index.</div>
-      <div class="why-nots">
-        <div class="why-pill"><span>✕</span>Not DB — 100× write limit, $200K+/day</div>
-        <div class="why-pill"><span>✕</span>Not Batch+PostGIS — lags reality, ETAs degrade</div>
-      </div>
-      <div class="dec-box"><p><code style="background:#0f1420;color:#7dd3fc;padding:2px 6px;border-radius:3px">GEOADD geo:drivers:nyc lat lng driver_id</code><br><br>O(log n) write. <strong>Overwrites the previous position</strong> — no stale accumulation. Sub-ms proximity query via GEOSEARCH. 5M entries fit in ~500 MB RAM. If Redis restarts, driver pings repopulate it in 5 seconds.</p></div>
-    </div>`
-  },
-  {
-    act:'Fix #1 — Location',actColor:'#ef4444',
-    map:{show:['rider','driver','gateway','location','redis_geo','kafka','cassandra'],active:'kafka',activeColor:'#ef4444',broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#ef4444">Fix #1 — Location at Scale</div>
-      <div class="s-title">Redis is fast but ephemeral.<br>History needs a durable log.</div>
-      <div class="why-nots">
-        <div class="why-pill"><span>✕</span>Not sync-write to both — couples ingestion to DB latency at 1M/s</div>
-      </div>
-      <div class="dec-box"><p>Location Service → <strong>Redis</strong> (synchronous, fast) + <strong>Kafka</strong> (fire-and-forget).<br>A Cassandra consumer reads from Kafka and appends to the location log.<br><br><strong>Why Cassandra:</strong> append-only, time-series partitioned by driver_id, LSM-tree built for write throughput. Horizontal scale by adding nodes, no re-sharding.</p></div>
-    </div>`
-  },
-  {
-    act:'Fix #1 — Location',actColor:'#ef4444',
-    map:{show:['rider','driver','gateway','location','redis_geo','kafka','cassandra'],active:'redis_geo',activeColor:'#ef4444',broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#ef4444">Fix #1 — Location at Scale</div>
-      <div class="s-title">One global Redis or sharded by city?</div>
-      <div class="insight-cols">
-        <div class="ins-col bad"><div class="ins-head">✕ Global cluster</div><p>A NYC surge slows São Paulo queries. A crash takes down matching <strong>worldwide</strong>. Violates data residency regulations in many regions.</p></div>
-        <div class="ins-col good"><div class="ins-head">✓ Shard by city</div><p><strong>geo:drivers:nyc</strong>, <strong>geo:drivers:sf</strong>. Kafka topics also per city. Failure blast radius contained to one region. Compliance met naturally.</p></div>
-      </div>
-    </div>`
-  },
-  {
-    act:'Fix #2 — Finding a Driver',actColor:'#8b5cf6',
-    map:{show:['rider','driver','gateway','location','dispatch','redis_geo','kafka','cassandra'],active:'dispatch',activeColor:'#8b5cf6',broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#8b5cf6">Fix #2 — Finding a Driver</div>
-      <div class="s-title">H3 hexagonal cells for proximity.</div>
-      <div class="why-nots">
-        <div class="why-pill"><span>✕</span>Not Geohash — rectangular cells, diagonal neighbors √2× farther</div>
-        <div class="why-pill"><span>✕</span>Not S2 — better, but square cells still have unequal neighbor distances</div>
-      </div>
-      <div class="dec-box"><p>H3 hexagons — <strong>all 6 neighbors equidistant</strong> from center. No direction is privileged. Level 9 ≈ 175m. Query pickup cell + 6 neighbors: <strong>5M drivers shrinks to hundreds of candidates</strong> before any ETA computation.</p></div>
-    </div>`
-  },
-  {
-    act:'Fix #2 — Finding a Driver',actColor:'#8b5cf6',
-    map:{show:['rider','driver','gateway','location','dispatch','redis_geo','kafka','cassandra'],active:'dispatch',activeColor:'#8b5cf6',broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#8b5cf6">Fix #2 — Finding a Driver</div>
-      <div class="s-title">Score by road ETA, not distance.</div>
-      <div class="insight-cols">
-        <div class="ins-col bad"><div class="ins-head">✕ Straight-line distance</div><p>Driver 800m away <strong>across a river</strong>: 12 minutes.<br>Ranked #1 by Euclidean distance.</p></div>
-        <div class="ins-col good"><div class="ins-head">✓ Road-network ETA</div><p>Driver 1.2km away on the <strong>same street</strong>: 4 minutes.<br>Modified Dijkstra + contraction hierarchies. &lt;50ms per query.</p></div>
-      </div>
-      <div class="s-note">Secondary signals: driver rating → acceptance rate → vehicle type match.</div>
-    </div>`
-  },
-  {
-    act:'Fix #3 — No Double Assignment',actColor:'#f97316',
-    map:{show:['rider','driver','gateway','location','dispatch','redis_geo','redis_lock','kafka','cassandra'],active:'redis_lock',activeColor:'#f97316',broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#f97316">Fix #3 — No Double Assignment</div>
-      <div class="s-title">Redis SETNX. Atomic. Self-cleaning.</div>
-      <div class="why-nots">
-        <div class="why-pill"><span>✕</span>Not in-memory lock — instance B doesn't know about A's lock</div>
-        <div class="why-pill"><span>✕</span>Not DB status CAS — timeout recovery is in-memory, lost on crash</div>
-      </div>
-      <div class="code-block">SET driver:42:lock  1  EX 10  NX
+// ── ACT 2: THE NAIVE DESIGN BREAKS ───────────────────────────────────────────
+{
+  act:'Naive Design',actColor:'#f59e0b',
+  map:{show:NAIVE,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f59e0b">Naive Design</div>
+    <div class="s-title">Start with the simplest thing.</div>
+    <div class="s-sub" style="margin-top:8px">Rider + Driver apps talk to one API server. Drivers POST their location every 5s. Server queries the database for nearby available drivers and assigns one.</div>
+    <div class="s-sub" style="margin-top:14px;color:#3a4468">Watch the map — it shows the current system. Now let's find where it breaks.</div>
+    <div class="s-note">Sections: top = naive design · bottom = production (coming soon)</div>
+  </div>`
+},
+{
+  act:'Break #1',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #1</div>
+    <div class="s-title">The database can't keep up.</div>
+    <div class="break-box"><p>5M drivers × 1 update/5s = <strong>1,000,000 writes/sec</strong>.<br>PostgreSQL handles ~10K writes/sec — we're <strong>100× over the limit</strong>.<br>DynamoDB at this volume: <strong>$200K+ per day</strong> in write capacity.</p></div>
+    <div class="s-note">Database flashing red on the map.</div>
+  </div>`
+},
+{
+  act:'Break #2',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #2</div>
+    <div class="s-title">Proximity queries are too slow.</div>
+    <div class="break-box"><p>"Find drivers within 5km" on 5M rows without spatial indexing is a <strong>full table scan</strong>.<br><br>Add a spatial index — now <strong>re-indexing under 1M writes/sec</strong> degrades the whole database simultaneously.</p></div>
+  </div>`
+},
+{
+  act:'Break #3',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['server_n','db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #3</div>
+    <div class="s-title">Two servers pick the same driver.</div>
+    <div class="break-box"><p>We'll run multiple API instances for scale. Two instances simultaneously select the <strong>same available driver</strong> for two different riders.<br><br>Without coordination, one rider's driver never shows up. Critical correctness failure.</p></div>
+  </div>`
+},
+{
+  act:'Break #4',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['rider_n','driver_n','server_n','db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #4</div>
+    <div class="s-title">Polling drowns the server.</div>
+    <div class="break-box"><p>Riders poll "where's my driver?" every 5s during trips.<br><strong>315K concurrent trips × 12 req/min = 3.8M requests/min</strong> — mostly empty responses. Every round-trip is wasted server capacity.</p></div>
+  </div>`
+},
+{
+  act:'Design Agenda',actColor:'#f59e0b',
+  map:{show:NAIVE,active:null,broken:['rider_n','driver_n','server_n','db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f59e0b">Design Agenda</div>
+    <div class="s-title">Four breaks. Four fixes. In order.</div>
+    <div class="agenda-list">
+      <div class="ag-row"><div class="ag-num" style="color:#ef4444">01</div><div class="ag-text">1M location writes/sec — the database can't absorb it</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#8b5cf6">02</div><div class="ag-text">Find the best driver nearby in under 100ms</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#f97316">03</div><div class="ag-text">One driver, one rider — no race condition</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#16a34a">04</div><div class="ag-text">Real-time tracking without 3.8M empty polls/min</div></div>
+    </div>
+    <div class="s-note">Stating the agenda in an interview shows structure and prevents scope drift.</div>
+  </div>`
+},
 
-NX = only if Not eXists — exactly one caller wins
-EX = auto-expires in 10s — covers crash AND ignore
-On accept → transition to on_trip, keep lock
-On reject → DEL lock, try next candidate</div>
-    </div>`
-  },
-  {
-    act:'Fix #3b — Crash Resilience',actColor:'#06b6d4',
-    map:{show:['rider','driver','gateway','location','dispatch','trip','redis_geo','redis_lock','kafka','postgres','cassandra','temporal'],active:'temporal',activeColor:'#06b6d4',broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#06b6d4">Fix #3b — Crash Resilience</div>
-      <div class="s-title">Temporal: the cascade that survives crashes.</div>
-      <div class="code-block">workflow MatchRider(rideId):
-  candidates = findNearbyDrivers(rideId)
+// ── ACT 3: FIX IT PIECE BY PIECE ─────────────────────────────────────────────
+
+// Fix 1a: Redis Geo
+{
+  act:'Fix #1 — Location',actColor:'#ef4444',
+  map:{show:['rider','driver','gateway','location','redis_geo'],active:'redis_geo',activeColor:'#ef4444',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Fix #1 — Location at Scale</div>
+    <div class="s-title">How do we store 1M writes/sec?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Write directly to PostgreSQL / DynamoDB</div>
+        <div class="opt-appeal">Simple. Already in the stack. ACID-compliant. One system to reason about.</div>
+        <div class="opt-verdict">PG caps at ~10K writes/sec — we need 100× more. DynamoDB at 1M writes/sec on-demand pricing: $200K+/day. Proximity queries on a 5M-row table under this write pressure collapse.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Partial</span>Batch writes + PostGIS spatial index</div>
+        <div class="opt-appeal">Aggregates 5–10s windows before inserting. PostGIS gives O(log n) proximity queries. Write pressure drops to manageable levels.</div>
+        <div class="opt-verdict">Driver position now lags reality by the batch window. At assignment time, the position you're matching on is 5–10s stale — ETA estimates are wrong and drivers appear closer than they are.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Redis Geo</div><p><code style="background:#0a0e18;color:#7dd3fc;padding:1px 5px;border-radius:3px">GEOADD geo:drivers:nyc lat lng driver_id</code> — O(log n) write, <strong>overwrites the previous position</strong> (no stale accumulation). Sub-ms proximity with GEOSEARCH. All 5M entries fit in ~500 MB RAM. Repopulates in 5s on restart from driver pings.</p></div>
+  </div>`
+},
+
+// Fix 1b: Kafka + Cassandra
+{
+  act:'Fix #1 — Location',actColor:'#ef4444',
+  map:{show:['rider','driver','gateway','location','redis_geo','kafka','cassandra'],active:'kafka',activeColor:'#ef4444',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Fix #1 — Location at Scale</div>
+    <div class="s-title">Redis is ephemeral — what about history?</div>
+    <div class="s-sub" style="margin-bottom:10px">We need a durable location log for billing disputes, trip reconstruction, and analytics.</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Write synchronously to Redis + a durable DB on every ping</div>
+        <div class="opt-appeal">Single write path, consistent, simple to reason about.</div>
+        <div class="opt-verdict">Couples ingestion latency to the DB. At 1M writes/sec, any DB hiccup backs up the entire pipeline. The fast path can't be held hostage to the slow one.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Kafka → Cassandra</div><p>Location Service writes to Redis synchronously (fast path) and publishes to <strong>Kafka</strong> fire-and-forget. A Cassandra consumer reads Kafka and appends to the location log asynchronously. Ingestion is never blocked by history writes.<br><br><strong>Why Cassandra:</strong> append-only, partitioned by driver_id, clustered by time — exactly what LSM-trees are built for. Scale by adding nodes with no re-sharding.</p></div>
+  </div>`
+},
+
+// Fix 1c: Geo-sharding
+{
+  act:'Fix #1 — Location',actColor:'#ef4444',
+  map:{show:['rider','driver','gateway','location','redis_geo','kafka','cassandra'],active:'redis_geo',activeColor:'#ef4444',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Fix #1 — Location at Scale</div>
+    <div class="s-title">One global Redis or sharded by city?</div>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">✕ One global cluster</div>
+        <p>A NYC concert surge <strong>slows queries for São Paulo</strong> drivers. A single Redis crash takes down matching <strong>worldwide</strong>. Violates data residency regulations in EU/APAC. One failure = global incident.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ Shard by city</div>
+        <p><strong>geo:drivers:nyc</strong>, <strong>geo:drivers:sf</strong>. Kafka topics also per city. A failure in NYC is a NYC incident only. Regulatory compliance met naturally. Operationally: each shard is small and independently scalable.</p>
+      </div>
+    </div>
+    <div class="s-note">Adaptive ping rate: stationary driver pings every 30s, driver near a pickup pings every 2s — cuts write volume without hurting matching quality.</div>
+  </div>`
+},
+
+// Fix 2a: H3
+{
+  act:'Fix #2 — Finding a Driver',actColor:'#8b5cf6',
+  map:{show:['rider','driver','gateway','location','dispatch','redis_geo','kafka','cassandra'],active:'dispatch',activeColor:'#8b5cf6',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#8b5cf6">Fix #2 — Finding a Driver</div>
+    <div class="s-title">How do we find nearby drivers in &lt;100ms?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Scan all 5M drivers on every request</div>
+        <div class="opt-appeal">No extra infrastructure. Always accurate. Trivially simple.</div>
+        <div class="opt-verdict">O(n) at 5M scale takes hundreds of milliseconds. At 350 requests/sec this is unacceptable. We need to reduce candidates to hundreds before any computation.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Geohash</span>Base-32 string prefix lookup</div>
+        <div class="opt-appeal">Simple, well-known, widely documented. Query a cell + 8 neighbors. Works in Redis sorted sets.</div>
+        <div class="opt-verdict">Rectangular cells — diagonal neighbors are <strong>√2× farther</strong> than edge neighbors. "Nearby" means different distances in different directions. Creates inconsistent ETA ranking near cell edges.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — H3 Hexagonal Grid (Uber's production choice)</div><p>Hexagons have <strong>all 6 neighbors equidistant</strong> from the center — no direction is privileged. Level 9 ≈ 175m resolution. Query pickup cell + 6 neighbors: <strong>5M drivers → hundreds of candidates</strong> before any ETA computation.</p></div>
+  </div>`
+},
+
+// Fix 2b: Road ETA scoring
+{
+  act:'Fix #2 — Finding a Driver',actColor:'#8b5cf6',
+  map:{show:['rider','driver','gateway','location','dispatch','redis_geo','kafka','cassandra'],active:'dispatch',activeColor:'#8b5cf6',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#8b5cf6">Fix #2 — Finding a Driver</div>
+    <div class="s-title">Score by road ETA, not distance.</div>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">✕ Straight-line distance</div>
+        <p>Driver 800m away <strong>across a river</strong>: 12 minutes to arrive.<br>Ranked #1 by Euclidean distance.<br><br>In a dense city, straight lines cross buildings, rivers, and one-way streets that don't exist in the real world.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ Road-network ETA</div>
+        <p>Driver 1.2km away <strong>on the same street</strong>: 4 minutes to arrive.<br>Ranked #1 by road ETA.<br><br>Modified Dijkstra with contraction hierarchies. Each query resolves in &lt;50ms — fast enough for hundreds of concurrent dispatch decisions.</p>
+      </div>
+    </div>
+    <div class="s-note">Secondary scoring signals: driver rating → acceptance rate (skip frequent rejecters) → vehicle type match.</div>
+  </div>`
+},
+
+// Fix 3: Redis SETNX
+{
+  act:'Fix #3 — No Double Assignment',actColor:'#f97316',
+  map:{show:['rider','driver','gateway','location','dispatch','redis_geo','redis_lock','kafka','cassandra'],active:'redis_lock',activeColor:'#f97316',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f97316">Fix #3 — No Double Assignment</div>
+    <div class="s-title">How do we guarantee one driver per rider?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>In-memory lock per Dispatch instance</div>
+        <div class="opt-appeal">Zero infrastructure. Just a HashSet. No network round-trip.</div>
+        <div class="opt-verdict">Instance A locks driver 42. Instance B has no idea — it locks driver 42 too. Race condition is guaranteed across processes. Lock state also disappears on service restart.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Better</span>Database compare-and-swap on driver status</div>
+        <div class="opt-appeal">Atomic across all instances. Works: available → outstanding_request → on_trip with a single CAS update.</div>
+        <div class="opt-verdict">Timeout recovery is still in-memory. If the service crashes after acquiring, the driver stays in <code style="color:#fbbf24">outstanding_request</code> forever. No self-healing.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Redis SETNX with TTL</div><p><code style="background:#0a0e18;color:#7dd3fc;padding:1px 5px;border-radius:3px">SET driver:42:lock 1 EX 10 NX</code><br><strong>NX</strong> = only if Not eXists — exactly one caller wins.<br><strong>EX 10</strong> = auto-expires in 10s — covers both "service crashed" and "driver ignored offer." No manual cleanup ever needed.</p></div>
+  </div>`
+},
+
+// Fix 3b: Temporal
+{
+  act:'Fix #3b — Crash Resilience',actColor:'#06b6d4',
+  map:{show:['rider','driver','gateway','location','dispatch','trip','redis_geo','redis_lock','kafka','postgres','cassandra','temporal'],active:'temporal',activeColor:'#06b6d4',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#06b6d4">Fix #3b — Crash Resilience</div>
+    <div class="s-title">What if the service crashes mid-match?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>in-memory setTimeout for the 10s wait</div>
+        <div class="opt-appeal">Zero dependencies. Works locally. Trivially simple to implement.</div>
+        <div class="opt-verdict">Timer state evaporates on service restart. Rider is stranded mid-match with no driver being tried and no recovery path.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Better</span>Kafka delayed message</div>
+        <div class="opt-appeal">Durable across restarts. Distributed. Decoupled from the matching service.</div>
+        <div class="opt-verdict">Kafka has no native per-message delay support. Requires a separate delay-queue service. Non-obvious failure modes, complex to test, fragile under partial failures.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Temporal durable workflow</div><p>State persisted across restarts. On crash, replays from last checkpoint. Built-in durable sleep for the 10s wait. The whole cascade — lock, offer, wait, retry — is one persistent workflow.</p></div>
+  </div>`
+},
+
+// Temporal code slide
+{
+  act:'Fix #3b — Crash Resilience',actColor:'#06b6d4',
+  map:{show:['rider','driver','gateway','location','dispatch','trip','redis_geo','redis_lock','kafka','postgres','cassandra','temporal'],active:'temporal',activeColor:'#06b6d4',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#06b6d4">Fix #3b — Crash Resilience</div>
+    <div class="s-title">The matching workflow in Temporal.</div>
+    <div class="code-block">workflow MatchRider(rideId):
+  candidates = findNearbyDrivers(rideId)   // activity
   for driver in candidates:
-    acquireLock(driver.id)           // activity
-    sendOffer(driver.id, rideId)     // activity
-    result = waitForResponse(10s)    // durable sleep ←
-    if result == ACCEPTED: return
-    releaseLock(driver.id)
+    acquireLock(driver.id)                  // activity
+    sendOffer(driver.id, rideId)            // activity
+    result = waitForResponse(timeout=10s)   // durable sleep
+    if result == ACCEPTED: return success
+    releaseLock(driver.id)                  // activity
+  fail("NO_DRIVER_AVAILABLE")</div>
+    <div class="code-note">Crash after <code>sendOffer</code>? Temporal replays from <code>waitForResponse</code> — the driver gets their full 10 seconds regardless. No ride lost. No driver double-booked.</div>
+  </div>`
+},
 
-Crash after sendOffer?
-Temporal replays from waitForResponse.
-No ride lost. No driver double-booked.</div>
-    </div>`
-  },
-  {
-    act:'Fix #4 — Real-time Updates',actColor:'#16a34a',
-    map:{show:ALL,active:'ringpop',activeColor:'#16a34a',broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#16a34a">Fix #4 — Real-time Updates</div>
-      <div class="s-title">WebSockets + Ringpop.</div>
-      <div class="why-nots">
-        <div class="why-pill"><span>✕</span>Not polling — 3.8M req/min of empty responses</div>
-        <div class="why-pill"><span>✕</span>Not central registry — ZooKeeper becomes a chokepoint</div>
+// Fix 4: WebSockets + Ringpop
+{
+  act:'Fix #4 — Real-time Updates',actColor:'#16a34a',
+  map:{show:ALL,active:'ringpop',activeColor:'#16a34a',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#16a34a">Fix #4 — Real-time Updates</div>
+    <div class="s-title">How does the rider see the driver move?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>HTTP polling every 5 seconds</div>
+        <div class="opt-appeal">Stateless. Works with any HTTP client. Simple to implement and cache.</div>
+        <div class="opt-verdict">315K trips × 12 req/min = <strong>3.8M requests/min</strong> of mostly empty "no change" responses. Up to 5s stale position. Pure wasted capacity.</div>
       </div>
-      <div class="dec-box"><p><strong>WebSocket:</strong> server pushes on update, ~50ms latency, zero wasted requests.<br><br><strong>Ringpop:</strong> consistent hashing maps H3 cell → owning server node, computed locally with no lookup. SWIM gossip for decentralized health. If an offer hits the wrong node it forwards transparently.</p></div>
-    </div>`
-  },
-  {
-    act:'API Design',actColor:'#00b4d8',
-    map:{show:ALL,active:'gateway',activeColor:'#00b4d8',broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#00b4d8">API Design</div>
-      <div class="s-title">Four endpoints. One key insight.</div>
-      <div class="s-sub" style="margin-bottom:4px">Why a separate <code style="background:#0f1420;color:#7dd3fc;padding:1px 5px;border-radius:3px">POST /fare</code> before booking? — If we accepted the fare amount from the client, a malicious request sends $0.01. Instead, the server stores the fare, returns a <strong>fare_id</strong> (2-min TTL). Client can never control the price.</div>
-      <div class="item-list" style="margin-top:12px">
-        <div class="item-row"><span class="item-label">POST /fare</span><span class="item-text">→ { fare_id, estimated_fare, eta } — stored server-side.</span></div>
-        <div class="item-row"><span class="item-label">POST /rides</span><span class="item-text">{ fare_id } → server looks up price. Creates trip: SEARCHING.</span></div>
-        <div class="item-row"><span class="item-label">PATCH /rides/:id</span><span class="item-text">{ action: accept|reject } — driver_id from JWT, never body.</span></div>
-        <div class="item-row"><span class="item-label">POST /location</span><span class="item-text">{ lat, lng, heading, speed } → GEOADD + Kafka publish.</span></div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Better</span>WebSocket + central registry (ZooKeeper)</div>
+        <div class="opt-appeal">Server pushes on update — ~50ms latency, zero empty requests. Registry maps user_id → server.</div>
+        <div class="opt-verdict">Every push requires a registry lookup. ZooKeeper under 10M concurrent connections becomes a coordination bottleneck and a single point of failure.</div>
       </div>
-    </div>`
-  },
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — WebSockets + Ringpop</div><p><strong>WebSocket:</strong> server pushes only when an update arrives. ~50ms latency, no wasted requests.<br><strong>Ringpop:</strong> consistent hashing maps H3 cell → owning server node, computed locally with no registry lookup. SWIM gossip for decentralized health detection. Transparent forwarding if a message hits the wrong node.</p></div>
+  </div>`
+},
 
-  // ── ACT 4: THE FULL PICTURE ───────────────────────────────────────────────
-  {
-    act:'The Full Picture',actColor:'#00b4d8',
-    map:{show:ALL,active:null,broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#00b4d8">The Full Picture</div>
-      <div class="s-title">The system you just built.</div>
-      <div class="s-sub" style="margin-top:8px">Every box on the map arrived through a constraint — not a single one was assumed upfront.</div>
-      <div class="item-list" style="margin-top:20px">
-        <div class="item-row"><span class="item-label" style="background:#1f0e0e;color:#f87171">1M writes/sec</span><span class="item-text">→ Redis Geo (live) + Kafka + Cassandra (history)</span></div>
-        <div class="item-row"><span class="item-label" style="background:#100f1f;color:#c4b5fd">proximity</span><span class="item-text">→ H3 hexagons + Dispatch Service + road ETA scoring</span></div>
-        <div class="item-row"><span class="item-label" style="background:#1a1008;color:#fdba74">race condition</span><span class="item-text">→ Redis SETNX EX 10 NX + Temporal workflow</span></div>
-        <div class="item-row"><span class="item-label" style="background:#081408;color:#86efac">real-time</span><span class="item-text">→ WebSockets + Ringpop consistent hashing</span></div>
-      </div>
-    </div>`
-  },
-  {
-    act:'The Full Picture',actColor:'#00b4d8',
-    map:{show:ALL,active:null,broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#00b4d8">Data Models</div>
-      <div class="s-title">What goes where — and why.</div>
-      <table class="data-tbl">
-        <thead><tr><th>Store</th><th>What lives there</th><th>Why this store</th></tr></thead>
-        <tbody>
-          <tr><td>Redis Geo</td><td>Live driver positions</td><td>In-memory, sub-ms, GEOADD overwrites. Ephemeral is fine.</td></tr>
-          <tr><td>Redis SETNX</td><td>Dispatch locks</td><td>Atomic acquire + auto-expiry. No other store gives both.</td></tr>
-          <tr><td>Cassandra</td><td>Location history log</td><td>1M+ appends/sec, append-only, LSM-tree, horizontal scale.</td></tr>
-          <tr><td>PostgreSQL</td><td>Trips + fares</td><td>ACID for billing. ~350 writes/sec — well within limits.</td></tr>
-          <tr><td>Temporal</td><td>Matching workflows</td><td>Durable state, built-in timeouts, crash recovery.</td></tr>
-        </tbody>
-      </table>
-    </div>`
-  },
-  {
-    act:'Stress Test',actColor:'#00b4d8',
-    map:{show:ALL,active:null,broken:[]},
-    html:`<div class="slide">
-      <div class="s-act" style="color:#00b4d8">Stress Test</div>
-      <div class="s-title">Does the design hold under failure?</div>
-      <div class="fail-list">
-        <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Redis crashes</div><div class="fail-result">Repopulates in 5s from driver pings. Locks expire via TTL. Trip state safe in PG.</div></div></div>
-        <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Dispatch crashes mid-workflow</div><div class="fail-result">Temporal replays from last checkpoint. No dropped rides.</div></div></div>
-        <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Driver ignores offer (10s timeout)</div><div class="fail-result">Temporal sleep ends. Lock auto-expires. Next candidate tried.</div></div></div>
-        <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">NYC surge (concert ends)</div><div class="fail-result">Kafka absorbs spike. Only nyc shard stressed. Other cities unaffected.</div></div></div>
-      </div>
-      <div class="s-note">2015 Uber outage: DB failover → 30-min global downtime. Lesson: remove the DB from the hot path. The geo index now lives exclusively in Redis.</div>
-    </div>`
-  },
+// API Design
+{
+  act:'API Design',actColor:'#00b4d8',
+  map:{show:ALL,active:'gateway',activeColor:'#00b4d8',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">API Design</div>
+    <div class="s-title">Four endpoints. One key insight.</div>
+    <div class="s-sub" style="margin-bottom:8px">Why a separate <code style="background:#0a0e18;color:#7dd3fc;padding:1px 5px;border-radius:3px">POST /fare</code> before booking? If the client sends a fare amount, it sends <code>$0.01</code>. Instead: the server stores the fare and returns a <strong>fare_id</strong> with a 2-min TTL. The client can never control the price.</div>
+    <div class="item-list">
+      <div class="item-row"><span class="item-label">POST /fare</span><span class="item-text">→ <code style="background:#0a0e18;color:#7dd3fc;padding:1px 5px;border-radius:3px">{ fare_id, estimated_fare, eta }</code> — stored server-side, TTL 2 min.</span></div>
+      <div class="item-row"><span class="item-label">POST /rides</span><span class="item-text"><code style="background:#0a0e18;color:#7dd3fc;padding:1px 5px;border-radius:3px">{ fare_id }</code> — server looks up price. Creates trip: SEARCHING.</span></div>
+      <div class="item-row"><span class="item-label">PATCH /rides/:id</span><span class="item-text"><code style="background:#0a0e18;color:#7dd3fc;padding:1px 5px;border-radius:3px">{ action: accept|reject }</code> — driver_id from JWT, never from request body.</span></div>
+      <div class="item-row"><span class="item-label">POST /location</span><span class="item-text"><code style="background:#0a0e18;color:#7dd3fc;padding:1px 5px;border-radius:3px">{ lat, lng, heading, speed }</code> → Redis GEOADD + Kafka publish.</span></div>
+    </div>
+  </div>`
+},
 
-  // ── CLOSING ───────────────────────────────────────────────────────────────
-  {
-    act:'',actColor:'#00b4d8',full:true,
-    map:{show:ALL,active:null,broken:[]},
-    html:`<div class="slide" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:60px;">
-      <div style="max-width:680px;width:100%">
-        <div class="s-act" style="color:#00b4d8;margin-bottom:20px">The Three Hard Problems</div>
-        <div class="closing-items">
-          <div class="closing-item">
-            <div class="closing-n" style="color:#ef4444">01</div>
-            <div class="closing-text">
-              <strong>1M location writes/sec</strong>
-              <span>Redis Geo (live, ephemeral) + Kafka + Cassandra (durable history). The two stores serve different masters — don't conflate them.</span>
-            </div>
-          </div>
-          <div class="closing-item">
-            <div class="closing-n" style="color:#f97316">02</div>
-            <div class="closing-text">
-              <strong>One driver, one rider — always</strong>
-              <span>Redis SETNX EX 10 NX — atomic, auto-expires, no manual cleanup. One command solves the race condition and the crash-recovery problem simultaneously.</span>
-            </div>
-          </div>
-          <div class="closing-item">
-            <div class="closing-n" style="color:#06b6d4">03</div>
-            <div class="closing-text">
-              <strong>The matching cascade survives crashes</strong>
-              <span>Temporal durable workflow — replays from last checkpoint on restart. Eliminates in-memory timers that die silently.</span>
-            </div>
+// ── ACT 4: THE FULL PICTURE ───────────────────────────────────────────────────
+{
+  act:'The Full Picture',actColor:'#00b4d8',
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">The Full Picture</div>
+    <div class="s-title">The system you just built.</div>
+    <div class="s-sub" style="margin-top:6px">Every box in the map arrived through a constraint — not a single one was assumed upfront.</div>
+    <div class="item-list" style="margin-top:18px">
+      <div class="item-row"><span class="item-label" style="background:#1f0808;color:#f87171">1M writes/sec</span><span class="item-text">→ Redis Geo (live, fast, ephemeral) + Kafka + Cassandra (durable append log)</span></div>
+      <div class="item-row"><span class="item-label" style="background:#10082a;color:#c4b5fd">proximity</span><span class="item-text">→ H3 hexagons + Dispatch Service + road-network ETA scoring</span></div>
+      <div class="item-row"><span class="item-label" style="background:#1a1006;color:#fdba74">race condition</span><span class="item-text">→ Redis SETNX EX 10 NX + Temporal durable workflow</span></div>
+      <div class="item-row"><span class="item-label" style="background:#060e06;color:#86efac">real-time</span><span class="item-text">→ WebSockets + Ringpop consistent hashing</span></div>
+    </div>
+  </div>`
+},
+{
+  act:'The Full Picture',actColor:'#00b4d8',
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">Data Models</div>
+    <div class="s-title">What goes where — and why.</div>
+    <table class="data-tbl">
+      <thead><tr><th>Store</th><th>What lives there</th><th>Why this store</th></tr></thead>
+      <tbody>
+        <tr><td>Redis Geo</td><td>Live driver positions</td><td>In-memory, sub-ms, GEOADD overwrites stale data. Ephemeral fine — repopulates in 5s.</td></tr>
+        <tr><td>Redis SETNX</td><td>Dispatch locks</td><td>Atomic acquire + auto-expiry. No other store gives both properties together.</td></tr>
+        <tr><td>Cassandra</td><td>Location history log</td><td>1M+ appends/sec, append-only, time-series. LSM-tree built exactly for this.</td></tr>
+        <tr><td>PostgreSQL</td><td>Trips + fares</td><td>ACID for billing integrity. ~350 writes/sec peak — well within limits.</td></tr>
+        <tr><td>Temporal</td><td>Matching workflows</td><td>Durable state, built-in timeouts, crash recovery without extra code.</td></tr>
+      </tbody>
+    </table>
+  </div>`
+},
+{
+  act:'Stress Test',actColor:'#00b4d8',
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">Stress Test</div>
+    <div class="s-title">Does the design hold under failure?</div>
+    <div class="fail-list">
+      <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Redis crashes</div><div class="fail-result">Positions repopulate in 5s from driver pings. Locks expire via TTL — no stuck drivers. Trip state safe in PostgreSQL.</div></div></div>
+      <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Dispatch crashes mid-workflow</div><div class="fail-result">Temporal replays from last checkpoint. Lock TTL auto-releases. No dropped rides.</div></div></div>
+      <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Driver ignores offer (10s timeout)</div><div class="fail-result">Temporal sleep ends. Lock auto-expires. Next candidate tried. Rider gets updated ETA.</div></div></div>
+      <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">NYC surge (concert ends, 50K simultaneous)</div><div class="fail-result">Kafka absorbs the spike. Only the nyc shard is stressed. London and SF unaffected.</div></div></div>
+    </div>
+    <div class="s-note">2015 Uber outage: DB failover → 30-min global downtime. The geo index was in the DB. Fix: remove the DB from the hot path entirely — the geo index now lives exclusively in Redis.</div>
+  </div>`
+},
+
+// Closing
+{
+  act:'',actColor:'#00b4d8',full:true,
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:56px 80px;">
+    <div style="max-width:640px;width:100%">
+      <div class="s-act" style="color:#00b4d8;margin-bottom:18px">The Three Hard Problems</div>
+      <div class="s-title" style="font-size:26px;margin-bottom:28px">Everything else follows from standard patterns.</div>
+      <div class="closing-items">
+        <div class="closing-item">
+          <div class="closing-n" style="color:#ef4444">01</div>
+          <div class="closing-text">
+            <strong>1M location writes/sec</strong>
+            <span>Redis Geo (live, ephemeral) + Kafka + Cassandra (durable). Two stores, two masters — never conflate them.</span>
           </div>
         </div>
-        <div class="s-note" style="margin-top:32px">Everything else follows from standard distributed systems patterns.</div>
+        <div class="closing-item">
+          <div class="closing-n" style="color:#f97316">02</div>
+          <div class="closing-text">
+            <strong>One driver, one rider — always</strong>
+            <span>Redis SETNX EX 10 NX — atomic, auto-expires. One command solves both the race condition and the crash-recovery problem.</span>
+          </div>
+        </div>
+        <div class="closing-item">
+          <div class="closing-n" style="color:#06b6d4">03</div>
+          <div class="closing-text">
+            <strong>The matching cascade survives crashes</strong>
+            <span>Temporal durable workflow — replays from last checkpoint. Eliminates in-memory timers that die silently on restart.</span>
+          </div>
+        </div>
       </div>
-    </div>`
-  },
+    </div>
+  </div>`
+},
 ];
 
-// ── RENDER ENGINE ─────────────────────────────────────────────────────────────
+// ── RENDERER ──────────────────────────────────────────────────────────────────
 const mount  = document.getElementById('slide-mount');
 const cpanel = document.getElementById('content-panel');
 const mpanel = document.getElementById('map-panel');
-let cur = 0, prev = -1;
+let cur = 0;
 
-function goTo(n) {
-  if (n < 0 || n >= SLIDES.length) return;
-  const s = SLIDES[n];
+function goTo(n){
+  if(n<0||n>=SLIDES.length) return;
+  const s=SLIDES[n];
 
-  // Swap slide content
+  // Swap content
   const old = mount.querySelector('.slide.active');
-  if (old) {
-    old.classList.add('exit');
-    setTimeout(() => old.remove(), 400);
-  }
-
-  const wrap = document.createElement('div');
-  wrap.innerHTML = s.html;
-  const el = wrap.firstChild;
+  if(old){ old.classList.add('exit'); setTimeout(()=>old.remove(),380); }
+  const wrap=document.createElement('div');
+  wrap.innerHTML=s.html;
+  const el=wrap.firstChild;
   el.classList.add('active');
   mount.appendChild(el);
 
-  // Full-screen vs two-panel
-  if (s.full) {
-    cpanel.classList.add('full');
-    mpanel.classList.add('hidden');
-  } else {
-    cpanel.classList.remove('full');
-    mpanel.classList.remove('hidden');
-  }
+  // Panel layout
+  if(s.full){ cpanel.classList.add('full'); mpanel.classList.add('hidden'); }
+  else       { cpanel.classList.remove('full'); mpanel.classList.remove('hidden'); }
 
-  // Update map
+  // Map
   updateMap(s.map);
 
-  // Update chrome
-  const leg = document.getElementById('leg-active');
-  if (s.map.active && s.actColor) {
-    leg.querySelector('.leg-dot').style.background = s.actColor;
-    document.getElementById('act-dot').style.background = s.actColor;
-    document.getElementById('act-label').style.color = s.actColor;
-  } else {
-    document.getElementById('act-dot').style.background = s.actColor||'#00b4d8';
-    document.getElementById('act-label').style.color = s.actColor||'#00b4d8';
-  }
-  document.getElementById('act-label').textContent = s.act||'';
-  document.getElementById('slide-num').textContent = `${n+1} / ${SLIDES.length}`;
-  document.getElementById('progress').style.width = `${(n+1)/SLIDES.length*100}%`;
-  document.getElementById('progress').style.background = s.actColor||'#00b4d8';
+  // Chrome
+  const ac=s.actColor||'#00b4d8';
+  document.getElementById('act-dot').style.background=ac;
+  document.getElementById('act-label').style.color=ac;
+  document.getElementById('act-label').textContent=s.act||'';
+  document.getElementById('slide-num').textContent=`${n+1} / ${SLIDES.length}`;
+  document.getElementById('progress').style.width=`${(n+1)/SLIDES.length*100}%`;
+  document.getElementById('progress').style.background=ac;
+  document.getElementById('leg-active').querySelector('.leg-dot').style.background=ac;
 
-  cur = n;
+  cur=n;
 }
 
-// Init
 goTo(0);
 
-// Navigation
-document.addEventListener('keydown', e => {
-  if (e.key==='ArrowRight'||e.key==='Enter') { e.preventDefault(); goTo(cur+1); }
-  if (e.key==='ArrowLeft')                   { e.preventDefault(); goTo(cur-1); }
-  if (e.key==='Tab'&&e.shiftKey)             { e.preventDefault(); goTo(cur-1); }
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='Enter'){ e.preventDefault(); goTo(cur+1); }
+  if(e.key==='ArrowLeft')                  { e.preventDefault(); goTo(cur-1); }
+  if(e.key==='Tab'&&e.shiftKey)            { e.preventDefault(); goTo(cur-1); }
 });
-document.getElementById('stage').addEventListener('click', e => {
-  e.clientX / window.innerWidth > 0.18 ? goTo(cur+1) : goTo(cur-1);
+document.getElementById('stage').addEventListener('click',e=>{
+  e.clientX/window.innerWidth>0.18 ? goTo(cur+1) : goTo(cur-1);
 });
 </script>
 </body>
