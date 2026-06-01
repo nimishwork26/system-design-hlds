@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock Exchange — High Level Design</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+    background: '#1a1d27', primaryColor: '#1e3a5f', primaryTextColor: '#e2e8f0',
+    primaryBorderColor: '#2e3354', lineColor: '#4a5580', secondaryColor: '#22263a'
+  }});</script>
+  <style>
+    :root { --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3354;
+            --accent:#00b4d8; --text:#e2e8f0; --muted:#8892b0; }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.75;}
+    code{background:var(--surface2);color:#7dd3fc;padding:1px 6px;border-radius:4px;font-size:13px;font-family:monospace;}
+    pre{font-family:monospace;font-size:12.5px;color:#7dd3fc;background:var(--surface2);padding:14px;border-radius:8px;overflow-x:auto;margin:8px 0;line-height:1.6;}
+    ul,ol{color:var(--muted);font-size:14px;padding-left:20px;}
+    li{margin-bottom:4px;} li strong{color:var(--text);}
+    .layout{display:flex;min-height:100vh;}
+    nav{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+    main{flex:1;padding:44px 54px;max-width:920px;}
+    .nav-logo{font-size:16px;font-weight:700;color:var(--accent);margin-bottom:3px;}
+    .nav-sub{font-size:10px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;}
+    .nav-links{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+    .nav-link{display:block;padding:5px 10px;border-radius:6px;color:#a78bfa;font-size:12px;text-decoration:none;border:1px solid #3b1f6e;background:#1e1635;text-align:center;}
+    .nav-link:hover{background:#2a1a4a;}
+    .nav-sec{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 4px;}
+    nav ul{list-style:none;padding:0;}
+    nav ul li a{display:block;padding:5px 10px;border-radius:6px;color:var(--muted);font-size:12.5px;text-decoration:none;transition:background .15s,color .15s;}
+    nav ul li a:hover,nav ul li a.active{background:var(--surface2);color:var(--text);}
+    section{margin-bottom:60px;}
+    h1{font-size:28px;font-weight:700;color:#fff;margin-bottom:4px;}
+    h2{font-size:19px;font-weight:600;color:var(--accent);margin-bottom:14px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+    h3{font-size:15px;font-weight:600;color:#c3cfe2;margin:20px 0 8px;}
+    p{color:var(--muted);margin-bottom:10px;} p strong{color:var(--text);}
+    .hero{margin-bottom:44px;padding-bottom:28px;border-bottom:1px solid var(--border);}
+    .hero-meta{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+    .badge{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 11px;font-size:12px;color:var(--muted);}
+    .tags{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+    .tag{background:#1e3a5f;color:#93c5fd;border-radius:999px;padding:2px 11px;font-size:12px;}
+    .tag.orange{background:#431407;color:#fdba74;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:12px;}
+    .card-title{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:6px;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+    .problem{border-left:3px solid #ef4444;background:rgba(239,68,68,.06);border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;}
+    .problem-label{font-size:10px;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+    .problem p{color:#fca5a5;margin:0;font-size:14px;}
+    .decision{border-left:3px solid #16a34a;background:rgba(22,163,74,.07);border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;}
+    .decision-label{font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+    .decision p{color:#86efac;margin:0;font-size:14px;}
+    .options{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+    .opt{display:flex;gap:14px;align-items:flex-start;padding:12px 16px;border-radius:8px;border:1px solid var(--border);}
+    .opt.no{border-color:#450a0a;background:rgba(220,38,38,.05);}
+    .opt.maybe{border-color:#1c3020;background:rgba(22,163,74,.04);}
+    .opt.yes{border-color:#1e1060;background:rgba(99,102,241,.07);}
+    .opt-pill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 9px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:3px;}
+    .no .opt-pill{background:#450a0a;color:#fca5a5;}
+    .maybe .opt-pill{background:#14532d;color:#86efac;}
+    .yes .opt-pill{background:#2e1065;color:#c4b5fd;}
+    .opt-body{font-size:13.5px;color:var(--muted);} .opt-body strong{color:var(--text);}
+    .insight-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+    .ins-col{border-radius:8px;padding:14px 16px;}
+    .ins-col.bad{background:#120606;border:1px solid #3a1010;}
+    .ins-col.good{background:#060e06;border:1px solid #0e3010;}
+    .ins-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+    .ins-col.bad .ins-head{color:#ef4444;} .ins-col.good .ins-head{color:#16a34a;}
+    .ins-col p{font-size:13.5px;line-height:1.6;color:var(--muted);}
+    .ins-col p strong{color:var(--text);}
+    .observe{border-left:3px solid var(--accent);background:rgba(0,180,216,.06);border-radius:0 8px 8px 0;padding:10px 14px;margin:14px 0;font-size:13.5px;color:var(--muted);}
+    .observe strong{color:var(--accent);}
+    .observe.warn{border-color:#d97706;background:rgba(217,119,6,.06);} .observe.warn strong{color:#fbbf24;}
+    .flow{display:flex;flex-direction:column;gap:0;margin:14px 0;}
+    .flow-step{display:flex;align-items:flex-start;gap:14px;position:relative;padding-bottom:16px;}
+    .flow-step:last-child{padding-bottom:0;}
+    .flow-step::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--border);}
+    .flow-step:last-child::before{display:none;}
+    .step-num{width:30px;height:30px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+    .step-body{padding-top:4px;}
+    .step-title{font-weight:600;color:var(--text);font-size:13.5px;}
+    .step-desc{color:var(--muted);font-size:13px;margin-top:2px;}
+    .mermaid-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin:18px 0;overflow-x:auto;display:flex;justify-content:center;}
+    table.t{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;}
+    table.t th{padding:8px 12px;background:var(--surface2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;text-align:left;}
+    table.t td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);}
+    table.t tr:last-child td{border-bottom:none;}
+    .num{color:var(--accent);font-weight:700;}
+    .tip{background:#1c1435;border:1px solid #3b1f6e;border-radius:8px;padding:12px 16px;margin:14px 0;}
+    .tip-label{font-size:10px;color:#a78bfa;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+    .tip p{color:#c4b5fd;margin:0;font-size:13.5px;}
+    ::-webkit-scrollbar{width:5px;height:5px;} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  </style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="nav-logo">Stock Exchange HLD</div>
+  <div class="nav-sub">System Design Interview</div>
+  <div class="nav-links">
+    <a href="slideshow.html" class="nav-link">Slideshow ↗</a>
+  </div>
+  <div class="nav-sec">Design Flow</div>
+  <ul>
+    <li><a href="#requirements">1. Requirements</a></li>
+    <li><a href="#estimation">2. Capacity</a></li>
+    <li><a href="#naive">3. Naive Design</a></li>
+    <li><a href="#matching-engine">4. Matching Engine</a></li>
+    <li><a href="#sequencer">5. Sequencer</a></li>
+    <li><a href="#market-data">6. Market Data</a></li>
+    <li><a href="#event-sourcing">7. Event Sourcing</a></li>
+    <li><a href="#risk-oms">8. Risk &amp; OMS</a></li>
+    <li><a href="#api">9. API Design</a></li>
+    <li><a href="#architecture">10. Final Architecture</a></li>
+    <li><a href="#datamodels">11. Data Models</a></li>
+    <li><a href="#failure">12. Failure &amp; Scale</a></li>
+  </ul>
+</nav>
+<main>
+
+  <div class="hero">
+    <h1>Designing a Stock Exchange</h1>
+    <p>The hardest system to design correctly — not because of scale, but because <strong>correctness and fairness are legally mandated</strong>. Two orders for the same price must execute in the order they arrived, reproducibly, every time.</p>
+    <div class="hero-meta">
+      <span class="badge">Distributed Systems</span>
+      <span class="badge">Event Sourcing</span>
+      <span class="badge">Low Latency</span>
+      <span class="badge">Financial Systems</span>
+    </div>
+    <div class="tags" style="margin-top:14px;">
+      <span class="tag">In-Memory Order Book</span>
+      <span class="tag">Sequencer Pattern</span>
+      <span class="tag">LMAX Disruptor</span>
+      <span class="tag">Market Data Fan-out</span>
+      <span class="tag orange">10 µs matching latency</span>
+    </div>
+  </div>
+
+  <!-- 1. REQUIREMENTS -->
+  <section id="requirements">
+    <h2>1. Requirements</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title" style="color:#93c5fd;">Functional</div>
+        <ul>
+          <li>Place, cancel, and modify limit &amp; market orders</li>
+          <li>Match buy and sell orders at the best available price (<strong>price-time priority</strong>)</li>
+          <li>Broadcast real-time market data: last trade price, bid/ask, order book depth</li>
+          <li>Provide order status updates to traders (filled, partial fill, cancelled)</li>
+          <li>Pre-trade risk checks: position limits, buying power, circuit breakers</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:#fdba74;">Non-Functional</div>
+        <ul>
+          <li><strong>Latency:</strong> &lt;10 µs order-to-match on hot path</li>
+          <li><strong>Throughput:</strong> 1M+ orders/sec at peak</li>
+          <li><strong>Fairness:</strong> strict price-time priority, legally enforceable</li>
+          <li><strong>Durability:</strong> zero order loss — every accepted order must execute or be explicitly cancelled</li>
+          <li><strong>Availability:</strong> 99.99% during market hours (09:30–16:00 ET)</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="margin-top:0;">
+      <div class="card-title" style="color:#8892b0;">Out of Scope</div>
+      <ul>
+        <li>Settlement and clearing (T+2 via DTCC — a separate regulated entity)</li>
+        <li>KYC / account onboarding</li>
+        <li>The routing engine (smart order router, dark pools)</li>
+        <li>Margin calculation and collateral management</li>
+        <li>Market surveillance and fraud detection</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 2. CAPACITY -->
+  <section id="estimation">
+    <h2>2. Capacity</h2>
+    <p>Only the numbers that create hard architectural problems.</p>
+    <table class="t">
+      <thead><tr><th>Metric</th><th>Number</th><th>Why it creates a problem</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Peak order throughput</td>
+          <td class="num">1,000,000 orders/sec</td>
+          <td>Every relational DB tops out at ~10K writes/sec with index maintenance. We are 100× over that limit.</td>
+        </tr>
+        <tr>
+          <td>Matching latency target</td>
+          <td class="num">&lt;10 microseconds</td>
+          <td>One network round-trip to a DB takes 500–2,000 µs. Any network call on the hot path is an instant 100× miss.</td>
+        </tr>
+        <tr>
+          <td>Active symbols</td>
+          <td class="num">~8,000 (NYSE)</td>
+          <td>Each symbol needs its own isolated order book — shared state between symbols creates contention for no benefit.</td>
+        </tr>
+        <tr>
+          <td>Market data subscribers</td>
+          <td class="num">~1,000,000</td>
+          <td>Every trade and quote update must reach all subscribers. A naive push-to-all is an N×M fan-out problem.</td>
+        </tr>
+        <tr>
+          <td>Order book depth per symbol</td>
+          <td class="num">~100 price levels</td>
+          <td>Each level is a FIFO queue of orders. The data structure choice determines whether match is O(1) or O(n).</td>
+        </tr>
+        <tr>
+          <td>Messages per day</td>
+          <td class="num">~10 billion</td>
+          <td>The event log (WAL) that enables crash recovery must handle this append volume durably.</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="observe">
+      <strong>The key insight:</strong> Unlike most systems where you can trade latency for throughput, a stock exchange demands both simultaneously. 1M orders/sec <em>at</em> 10 µs — not 1M orders/sec <em>or</em> 10 µs. This combination eliminates every solution that touches a network or disk on the critical path.
+    </div>
+  </section>
+
+  <!-- 3. NAIVE DESIGN -->
+  <section id="naive">
+    <h2>3. Start Simple</h2>
+    <p>Traders submit buy/sell orders to an API server. The server writes the order to a database and queries for matching orders (best ask ≤ best bid). On a match, it updates both orders and records a trade. Simple enough.</p>
+
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart LR
+    Trader -->|POST /orders| API["API Server"]
+    API -->|INSERT order| DB[("Orders DB\n(PostgreSQL)")]
+    DB -->|SELECT best match| API
+    API -->|UPDATE matched orders| DB
+    API -->|Notify| Trader
+      </div>
+    </div>
+
+    <h3>Where the naive design breaks</h3>
+
+    <div class="problem">
+      <div class="problem-label">Break #1 — The database can't match at microsecond speed</div>
+      <p>Matching one order requires at minimum: SELECT best opposite order + UPDATE matched quantity + INSERT trade record = <strong>3 round-trips × 500 µs each = 1.5 ms minimum</strong>. Target is 10 µs. We are <strong>150× too slow</strong> before even considering 1M orders/sec write pressure.</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-label">Break #2 — Two servers pick the same counterparty order</div>
+      <p>Scale to multiple API servers. Two servers concurrently find the same best ask, both decide to match against it, both UPDATE it. <strong>The same shares are sold twice.</strong> Database-level row locking "fixes" this but serializes every match through one DB lock — throughput collapses to ~1K matches/sec.</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-label">Break #3 — Market data fan-out is an N×M explosion</div>
+      <p>Every trade and quote change must be pushed to ~1M subscribers. If the matching server is also responsible for pushing updates, a slow subscriber (network congestion, overloaded client) <strong>blocks the matching loop</strong>. One bad client takes down the entire exchange.</p>
+    </div>
+
+    <div class="problem">
+      <div class="problem-label">Break #4 — Server crash = order book lost</div>
+      <p>The matching logic runs on stateless API servers; the database is the "order book." After a crash, open orders still exist in the DB — but <strong>mid-flight orders (received but not yet persisted) are silently lost</strong>. In a fast market, thousands of orders can be in-flight at any instant.</p>
+    </div>
+  </section>
+
+  <!-- 4. MATCHING ENGINE -->
+  <section id="matching-engine">
+    <h2>4. Fix #1 — In-Memory Matching Engine</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>Any database round-trip (500–2,000 µs) on the match path makes the 10 µs target physically impossible. The order book must live somewhere with nanosecond access time: process memory.</p>
+    </div>
+
+    <div class="options">
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>PostgreSQL + price-time index</strong> — ACID, MVCC, already in the stack. Seems safe and correct.<br>
+          Best-case 3 round-trips per match at 500 µs each = 1.5 ms. At 1M orders/sec, matching falls 150,000× behind ingestion. Index maintenance under 1M writes/sec causes cascading write stalls. No path to 10 µs.
+        </div>
+      </div>
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>Redis sorted set per symbol</strong> — in-memory, O(log n) inserts and range queries. Network call is only ~100 µs.<br>
+          Still 10× too slow. Redis Lua scripts can't atomically "match and execute" across two sorted sets (buy side + sell side) without a custom module. No concept of FIFO within a price level — price-time priority is impossible.
+        </div>
+      </div>
+      <div class="opt yes">
+        <span class="opt-pill">Decision</span>
+        <div class="opt-body">
+          <strong>In-process order book — a price-level map with FIFO queues</strong> — the order book lives entirely in the matching engine's heap memory. Zero network. Zero disk. O(1) match check (compare best bid vs best ask). O(1) insert at a known price level (append to FIFO queue).
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Decision — In-Memory Order Book</div>
+      <p><strong>Buy side:</strong> <code>TreeMap&lt;Price, Queue&lt;Order&gt;&gt;</code> sorted descending (highest bid first). <strong>Sell side:</strong> <code>TreeMap&lt;Price, Queue&lt;Order&gt;&gt;</code> sorted ascending (lowest ask first). Match check: peek at <code>best_bid.price ≥ best_ask.price</code> → O(1). Execute: dequeue from both FIFO queues, preserving time priority exactly. Each symbol gets its own matching engine thread — no shared state, no locks.</p>
+    </div>
+
+    <h3>Why single-threaded per symbol?</h3>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">✕ Multi-threaded matching per symbol</div>
+        <p>Two threads could match the same order simultaneously. Fixing this requires a mutex on every order book operation. Acquiring a mutex takes <strong>50–200 ns</strong> — already 5–20× over the 10 µs budget for just the lock. Contention under load makes it worse.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ One thread per symbol</div>
+        <p>No shared mutable state between threads. No locks. No cache-line contention. The matching thread processes orders one at a time in strict arrival order. Correctness falls out of the model — you can't have a race condition with one thread.</p>
+      </div>
+    </div>
+
+    <div class="observe">
+      <strong>The "aha" moment:</strong> The matching engine is single-threaded NOT because we don't have cores, but because adding parallelism requires locks that cost more nanoseconds than the match itself. Eight symbols → eight threads, each saturating one core at near-100% utilization. NYSE runs ~8,000 symbols on a cluster of single-threaded matching engine processes.
+    </div>
+  </section>
+
+  <!-- 5. SEQUENCER -->
+  <section id="sequencer">
+    <h2>5. Fix #2 — The Sequencer</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>Orders arrive from thousands of concurrent clients. The matching engine is single-threaded — it processes one order at a time. <strong>Which order does it process first?</strong> If two orders arrive within the same microsecond from different gateway servers, and the gateways disagree on ordering, then two replicas of the matching engine produce different trade results. The system has split-brain at its most critical component.</p>
+    </div>
+
+    <div class="options">
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>Database auto-increment sequence number</strong> — the DB assigns a monotonically increasing ID before the order reaches the matching engine.<br>
+          Requires a DB round-trip per order (1–5 ms). At 1M orders/sec, the sequence DB becomes the bottleneck — and it's on the critical path. Also: two DB instances for HA means two sequence generators, which means gaps and possible non-monotonicity.
+        </div>
+      </div>
+      <div class="opt maybe">
+        <span class="opt-pill">Partial</span>
+        <div class="opt-body">
+          <strong>Kafka topic with a single partition per symbol</strong> — Kafka guarantees ordering within a partition. Clients publish directly to Kafka; matching engine consumes.<br>
+          Ordering is guaranteed, but the sequence number is assigned by Kafka at write time — which is after the client's network trip to the broker. Two clients publishing "simultaneously" have their order decided by whichever packet arrives at the Kafka broker first. This is acceptable fairness for most exchanges, but the Kafka broker itself becomes a network-latency bottleneck.
+        </div>
+      </div>
+      <div class="opt yes">
+        <span class="opt-pill">Decision</span>
+        <div class="opt-body">
+          <strong>Dedicated single-threaded Sequencer service</strong> — a single process that receives orders from all gateways, stamps a monotonically increasing sequence number, and publishes to the sequenced log (Kafka, single partition per symbol). The matching engine reads from this log in strict order.
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Decision — Sequencer + Sequenced Log</div>
+      <p>The Sequencer is the <strong>single serialization point</strong> for all order events. It is the boundary between "concurrent world" (many clients) and "ordered world" (single-threaded matching). Once an order has a sequence number, the system is deterministic: given the same log, <strong>the same trades result every time</strong> — enabling both crash recovery and audit replay with zero extra work.</p>
+    </div>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Order Gateway receives order from trader</div>
+          <div class="step-desc">Pre-trade risk check (position limits, buying power). If passes, forwards to Sequencer.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Sequencer stamps sequence number</div>
+          <div class="step-desc">Single thread. Atomically increments a counter, attaches <code>seq=1000042</code> and timestamp. Publishes to Kafka topic <code>orders.AAPL</code> partition 0.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Matching Engine consumes from Kafka in order</div>
+          <div class="step-desc">Reads <code>orders.AAPL</code> from last committed offset. Processes seq=1000042 before seq=1000043. Always. No matter what.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Matching Engine publishes trade events back to Kafka</div>
+          <div class="step-desc">Topic <code>trades.AAPL</code>. Every filled order, every partial fill, every cancel — all events go here. This is also the write-ahead log (see Fix #4).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="observe warn">
+      <strong>Fairness guarantee:</strong> NYSE and NASDAQ have implemented "speed bumps" (IEX's 350-microsecond coax cable delay) specifically to give sequence numbers to orders based on receipt time, not network advantage. The Sequencer is what makes this physically enforceable.
+    </div>
+  </section>
+
+  <!-- 6. MARKET DATA -->
+  <section id="market-data">
+    <h2>6. Fix #3 — Market Data Distribution</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>Every trade and every order book change must reach ~1,000,000 subscribers as fast as possible. If the matching engine is responsible for pushing updates, a single slow subscriber (network congestion, GC pause, overloaded app) causes the matching loop to stall. <strong>One bad client can freeze the entire exchange.</strong></p>
+    </div>
+
+    <div class="options">
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>Matching engine pushes directly to all subscribers via WebSocket</strong> — no middleware, lowest latency at first glance.<br>
+          The matching engine now manages 1M open connections. A GC pause on the matching engine thread stalls both matching AND delivery. Slow subscribers block the event loop. This architecture conflates the exchange's two completely different workloads.
+        </div>
+      </div>
+      <div class="opt maybe">
+        <span class="opt-pill">Partial</span>
+        <div class="opt-body">
+          <strong>Kafka → WebSocket fan-out tier</strong> — matching engine publishes to Kafka, a fleet of WebSocket servers consume and push to clients. Decoupled.<br>
+          Each WebSocket server handles ~50K concurrent connections. At 1M subscribers you need 20 servers. Now you need a routing layer to know which server holds each subscriber's connection. Operational complexity and another hop of latency.
+        </div>
+      </div>
+      <div class="opt yes">
+        <span class="opt-pill">Decision</span>
+        <div class="opt-body">
+          <strong>Ring buffer (LMAX Disruptor) → Kafka → Market Data Service</strong> — the matching engine writes trade events to a lock-free ring buffer (zero heap allocation, zero GC pressure). A separate publisher thread reads from the ring buffer and writes to Kafka asynchronously. The Market Data Service fans out to subscribers.
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Decision — Two-Tier Market Data</div>
+      <p><strong>Internal (matching → Kafka):</strong> LMAX Disruptor ring buffer — lock-free, cache-line-aligned, zero GC. The matching engine never blocks on a slow subscriber. <strong>External delivery (two tiers by client type):</strong><br>
+      • <strong>Retail / API clients:</strong> WebSocket via Market Data Service — tolerate 10–50 ms latency, manageable connection count.<br>
+      • <strong>HFT co-location clients:</strong> UDP multicast on the exchange's private network — no TCP handshake, no retransmit, best-effort sub-millisecond delivery. HFT clients are expected to handle packet loss with their own gap-fill logic.</p>
+    </div>
+
+    <div class="observe">
+      <strong>Why UDP for HFT?</strong> TCP's reliable delivery requires acknowledgements, retransmits, and per-connection state. At 1M messages/sec across 100 co-location clients, this is 100M ACKs/sec just for one symbol. UDP multicast sends one packet that all subscribers receive simultaneously — the "cost" per additional subscriber is zero bytes of extra bandwidth.
+    </div>
+  </section>
+
+  <!-- 7. EVENT SOURCING -->
+  <section id="event-sourcing">
+    <h2>7. Fix #4 — Event Sourcing &amp; Crash Recovery</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>The matching engine holds the full order book in process memory. On crash, all in-flight orders (received by the Sequencer but not yet confirmed as processed) are ambiguous — did they execute? The exchange cannot tell a trader "we're not sure if your order filled." That is not a valid system state.</p>
+    </div>
+
+    <div class="options">
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>Checkpoint the order book to disk every N seconds</strong> — a periodic snapshot that can be restored on restart.<br>
+          Up to N seconds of order events are lost on crash. In a fast market, N=5 seconds = thousands of trades lost. Re-processing the last N seconds of orders with current prices produces different trades than the original — prices have moved. Regulatorily unacceptable.
+        </div>
+      </div>
+      <div class="opt maybe">
+        <span class="opt-pill">Partial</span>
+        <div class="opt-body">
+          <strong>Synchronously write each order to a durable DB before matching</strong> — durability first, then match.<br>
+          Adds a DB round-trip (1–5 ms) to every order before matching. We are back to Break #1. The hot path is throttled to DB write speed, not matching engine speed.
+        </div>
+      </div>
+      <div class="opt yes">
+        <span class="opt-pill">Decision</span>
+        <div class="opt-body">
+          <strong>The Kafka sequenced log IS the write-ahead log</strong> — every order was already durably written to Kafka by the Sequencer before the matching engine saw it. Crash recovery = restart the matching engine and replay from the last committed Kafka offset.
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Decision — Event Sourcing via Kafka Replay</div>
+      <p>The matching engine is a <strong>pure function of its event log</strong>: <code>state = reduce(events[0..N])</code>. This is event sourcing in its simplest form. On crash: consume all unprocessed events from Kafka starting at the last committed offset. The matching engine is deterministic — same inputs, same outputs, same order book state. <strong>Recovery takes ~30 seconds for 1M events at replay speed</strong> — acceptable for a market that can suspend for a technical halt.</p>
+    </div>
+
+    <h3>What gets persisted and where</h3>
+    <ul>
+      <li><strong>Kafka (sequenced log):</strong> every order event with its sequence number — the immutable source of truth</li>
+      <li><strong>PostgreSQL:</strong> current order status per order ID — allows traders to query "is my order open?" without replaying the full log</li>
+      <li><strong>Cassandra:</strong> all executed trades — append-only, partitioned by symbol + date, clustered by timestamp. Historical queries: "show all AAPL trades today."</li>
+    </ul>
+
+    <div class="observe warn">
+      <strong>The elegance of this design:</strong> The Sequencer (Fix #2) was added to solve ordering. The Kafka log it writes to gives us event sourcing for free. The Market Data Service (Fix #3) reads the same Kafka log. Three problems solved by one component: the sequenced Kafka topic.
+    </div>
+  </section>
+
+  <!-- 8. RISK & OMS -->
+  <section id="risk-oms">
+    <h2>8. Risk Engine &amp; Order Management</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>A trader submits an order to buy 10M shares of AAPL — more than their account balance allows. If the matching engine processes this before checking limits, the trade executes. Unwinding it requires calling the counterparty, regulatory notification, and potentially market-moving cancellations. <strong>Pre-trade risk is not optional.</strong></p>
+    </div>
+
+    <h3>Pre-trade risk (synchronous, on the gateway)</h3>
+    <p>Every order passes through the Risk Engine <em>before</em> it reaches the Sequencer. The Risk Engine checks:</p>
+    <ul>
+      <li><strong>Buying power:</strong> cash + margin available ≥ order value (Redis hash lookup — O(1))</li>
+      <li><strong>Position limits:</strong> existing position + order size ≤ regulatory max</li>
+      <li><strong>Price sanity:</strong> limit price within X% of last trade (prevents fat-finger orders from moving the market)</li>
+      <li><strong>Circuit breakers:</strong> symbol-level and market-level halt flags in Redis</li>
+    </ul>
+
+    <div class="decision">
+      <div class="decision-label">Decision — Risk State in Redis</div>
+      <p>Position and cash balances live in Redis (hash per account). The Risk Engine does sub-millisecond reads. Updates happen asynchronously as trades settle: the OMS consumes trade events from Kafka and increments/decrements Redis balances. <strong>There is a small window of inconsistency</strong> between trade execution and balance update — this is acceptable and standard practice. Brokers hold regulatory capital buffers that cover this window.</p>
+    </div>
+
+    <h3>Order Management Service (OMS)</h3>
+    <p>The OMS bridges the matching engine and the trader. It consumes all order events from Kafka and:</p>
+    <ul>
+      <li>Updates order status in PostgreSQL (open → partially_filled → filled)</li>
+      <li>Updates account balances in Redis on fill</li>
+      <li>Sends execution reports to traders via the Order Gateway WebSocket</li>
+      <li>Handles cancel-on-disconnect (if trader WebSocket drops, cancel open orders)</li>
+    </ul>
+  </section>
+
+  <!-- 9. API DESIGN -->
+  <section id="api">
+    <h2>9. API Design</h2>
+    <p>Only the endpoints with non-obvious design choices.</p>
+
+    <h3>Order submission — why not REST?</h3>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">✕ REST POST /orders</div>
+        <p>Each order requires a new TCP connection or connection-pool slot. HTTP headers add <strong>200–500 bytes</strong> of overhead per order. At 1M orders/sec from institutional clients, header parsing alone consumes significant CPU. Response model assumes synchronous execution — but matching is asynchronous.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ FIX Protocol over TCP (or WebSocket for retail)</div>
+        <p>FIX (Financial Information eXchange) is the industry standard. Binary-ish text protocol, persistent connection, no headers per message. Institutional clients: raw FIX TCP. Retail / web clients: JSON over WebSocket. Both are <strong>persistent bidirectional connections</strong> — execution reports arrive on the same connection without polling.</p>
+      </div>
+    </div>
+
+    <h3>Key endpoints</h3>
+    <table class="t">
+      <thead><tr><th>Operation</th><th>Message Type</th><th>Key Design Choice</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><code>NewOrderSingle</code></td>
+          <td>FIX D / WS JSON</td>
+          <td><code>client_order_id</code> is client-generated for idempotency. Server assigns <code>exchange_order_id</code> after sequencing. Client ID enables dedup on network retry without re-submitting.</td>
+        </tr>
+        <tr>
+          <td><code>OrderCancelRequest</code></td>
+          <td>FIX F</td>
+          <td>Cancel by <code>exchange_order_id</code>, not symbol + price. Price-level cancels would require scanning the book — O(n) instead of O(1) hash lookup by ID.</td>
+        </tr>
+        <tr>
+          <td><code>ExecutionReport</code></td>
+          <td>FIX 8 (server → client)</td>
+          <td>Server-initiated. Sent on: new order ack, partial fill, full fill, cancel confirm, reject. The client never polls — it receives reports asynchronously on its open connection.</td>
+        </tr>
+        <tr>
+          <td>Market Data Subscribe</td>
+          <td>WS / UDP multicast</td>
+          <td>Subscription granularity is per-symbol, not per-trade. Clients declare symbols they want. Market Data Service maintains per-symbol subscriber lists. Symbol-level filtering happens server-side.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="tip">
+      <div class="tip-label">Idempotency</div>
+      <p>The <code>client_order_id</code> field is critical: if the client sends an order and the network drops before receiving the ack, the client can safely re-send with the same <code>client_order_id</code>. The gateway deduplicates on this field — the order is sequenced exactly once. Without this, network retries cause duplicate orders.</p>
+    </div>
+  </section>
+
+  <!-- 10. FINAL ARCHITECTURE -->
+  <section id="architecture">
+    <h2>10. Final Architecture</h2>
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart LR
+    Trader -->|FIX/WS| GW["Order Gateway"]
+    Broker -->|FIX| GW
+    GW -->|pre-trade check| Risk["Risk Engine"]
+    Risk -->|limits| Redis[("Redis")]
+    GW -->|sequenced| SEQ["Sequencer"]
+    SEQ -->|seq log| Kafka[("Kafka")]
+    Kafka -->|ordered stream| ME["Match Engine\n(single-thread/symbol)"]
+    ME -->|trade events| Kafka
+    ME -->|order state| PG[("PostgreSQL")]
+    ME -->|trade history| CS[("Cassandra")]
+    Kafka -->|fan-out| MDS["Mkt. Data Svc"]
+    MDS -->|WebSocket| Trader
+    MDS -->|UDP multicast| HFT["HFT Co-location"]
+    MDS --> kdb[("kdb+")]
+      </div>
+    </div>
+    <p>Every component arrived through a break point. The Sequencer and the Kafka event log are the load-bearing components — every other piece depends on the guarantee they provide.</p>
+  </section>
+
+  <!-- 11. DATA MODELS -->
+  <section id="datamodels">
+    <h2>11. Data Models</h2>
+    <table class="t">
+      <thead><tr><th>Store</th><th>What lives there</th><th>Why this store</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>In-process memory (ME)</td>
+          <td>Live order book: price-level maps per symbol</td>
+          <td>Zero network, zero disk. O(1) match. The only store that can meet 10 µs. Ephemeral — rebuilt from Kafka on restart.</td>
+        </tr>
+        <tr>
+          <td>Kafka (sequenced log)</td>
+          <td>Every order event with sequence number</td>
+          <td>Durable, ordered, replayable. The write-ahead log. Also the market data feed source. Three uses, one component.</td>
+        </tr>
+        <tr>
+          <td>PostgreSQL</td>
+          <td>Order status: order_id, symbol, state, filled_qty</td>
+          <td>ACID for correctness. Traders query "is my order open?" — ~350 reads/sec, well within limits. Updated by OMS asynchronously off the trade event stream.</td>
+        </tr>
+        <tr>
+          <td>Cassandra</td>
+          <td>Trade history: symbol, timestamp, price, qty, buyer_id, seller_id</td>
+          <td>Append-only time-series. LSM-tree optimized for this pattern. Partitioned by symbol+date, clustered by timestamp. Historical queries for compliance and analytics.</td>
+        </tr>
+        <tr>
+          <td>Redis</td>
+          <td>Account balances, position totals, circuit breaker flags</td>
+          <td>Sub-millisecond reads for pre-trade risk checks. Hash per account: <code>HGET account:42 buying_power</code>. Updated asynchronously as trades settle.</td>
+        </tr>
+        <tr>
+          <td>kdb+</td>
+          <td>Full tick data: every quote and trade with nanosecond timestamps</td>
+          <td>Column-oriented time-series DB purpose-built for financial data. Used by quant research and compliance — not on the trading path.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 12. FAILURE & SCALE -->
+  <section id="failure">
+    <h2>12. Failure &amp; Scale</h2>
+
+    <h3>Stress-testing the key decisions</h3>
+    <table class="t">
+      <thead><tr><th>Failure Scenario</th><th>What happens</th><th>Why it's safe</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Matching engine crashes</td>
+          <td>Failover instance replays Kafka from last committed offset</td>
+          <td>Matching engine is deterministic — same Kafka log = same order book state. Recovery ~30s. Exchange declares technical halt, resumes when recovery is confirmed.</td>
+        </tr>
+        <tr>
+          <td>Sequencer crashes</td>
+          <td>Standby Sequencer takes over from last assigned sequence number (stored in ZooKeeper)</td>
+          <td>The standby reads the last sequence number from durable state. There is a gap in sequence numbers (the lost window) — the matching engine skips the gap and logs it for audit. Orders in-flight are re-submitted by clients on timeout.</td>
+        </tr>
+        <tr>
+          <td>Kafka broker failure</td>
+          <td>Kafka replication (RF=3) — failover to replica within ~10 ms</td>
+          <td>Sequencer's Kafka producer blocks until the leader replica confirms write. No event is acknowledged without durability. ISR (in-sync replicas) guarantee no data loss on leader failure.</td>
+        </tr>
+        <tr>
+          <td>Market volatility surge (circuit breaker)</td>
+          <td>Risk Engine sets a halt flag in Redis; all gateways reject new orders for that symbol</td>
+          <td>The halt flag is checked on every order submission — O(1) Redis read. No change to the matching engine required. Halt resolves within seconds once volatility subsides.</td>
+        </tr>
+        <tr>
+          <td>Redis crashes (risk state lost)</td>
+          <td>Risk Engine falls back to conservative limits (reject all orders above a low threshold)</td>
+          <td>Redis positions are rebuilt from Kafka trade events by OMS on restart. During the ~5 min rebuild window, conservative limits prevent large orders that could cause harm.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Scale-out strategy</h3>
+    <ul>
+      <li><strong>Matching engines:</strong> one process per trading symbol. 8,000 symbols → 8,000 processes across a cluster. Horizontal scale is trivially additive.</li>
+      <li><strong>Sequencers:</strong> one per symbol (same partitioning as matching engines). Each is a single thread — if throughput exceeds ~2M orders/sec for one symbol (only possible in extreme volatility), split the symbol's order book by price range.</li>
+      <li><strong>Market Data Service:</strong> fan-out tier is stateless and horizontally scalable. Add servers proportional to subscriber count. WebSocket servers are routed by consistent hashing on subscriber ID.</li>
+      <li><strong>Kafka:</strong> partition-per-symbol. Add brokers to increase total parallelism. Replication factor 3 for all exchange-critical topics.</li>
+    </ul>
+
+    <div class="observe warn">
+      <strong>The 2010 Flash Crash:</strong> The Dow dropped 1,000 points in minutes. Root cause: a large sell order triggered cascading stop-loss orders. A properly implemented circuit breaker (halt trading when price moves &gt;5% in &lt;5 minutes) is the only safe mitigation. The Sequencer's sequence log is what allows post-incident forensic replay to determine the exact causal chain.
+    </div>
+  </section>
+
+</main>
+</div>
+<script>
+  const secs = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('nav a[href^="#"]');
+  secs.forEach(s => new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin:'-20% 0px -70% 0px' }).observe(s));
+</script>
+</body>
+</html>

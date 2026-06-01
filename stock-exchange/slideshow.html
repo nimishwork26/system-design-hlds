@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Designing a Stock Exchange</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0d1017;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden;user-select:none;}
+
+#chrome{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(13,16,23,.96);border-bottom:1px solid #1e2540;display:flex;align-items:center;padding:0 20px;gap:12px;z-index:30;backdrop-filter:blur(8px);}
+#act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .5s;}
+#act-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;transition:color .5s;}
+#slide-num{margin-left:auto;font-size:11px;color:#3a4468;font-variant-numeric:tabular-nums;}
+#nav-hint{font-size:11px;color:#2a3055;}
+.chrome-btn{font-size:11px;color:#3a4468;text-decoration:none;border:1px solid #1e2540;padding:3px 10px;border-radius:5px;transition:color .15s;}
+.chrome-btn:hover{color:#8892b0;}
+#progress{position:fixed;bottom:0;left:0;height:3px;background:#00b4d8;transition:width .4s ease,background .5s;z-index:30;}
+
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;}
+#content-panel{flex:0 0 62%;height:100%;position:relative;overflow:hidden;display:flex;align-items:center;padding:28px 44px 28px 52px;}
+#map-panel{flex:0 0 38%;height:100%;display:flex;flex-direction:column;justify-content:center;padding:20px 24px 20px 0;}
+#map-panel.hidden{display:none;}
+#content-panel.full{flex:0 0 100%;padding:0;}
+
+.map-title{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#252a3d;margin-bottom:8px;padding-left:2px;}
+#map-svg{width:100%;height:auto;display:block;}
+.map-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;padding-left:2px;}
+.leg-row{display:flex;align-items:center;gap:5px;font-size:10px;color:#2a3055;}
+.leg-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+
+.slide{width:100%;opacity:0;transform:translateY(14px);transition:opacity .36s ease,transform .36s ease;pointer-events:none;position:absolute;}
+.slide.active{opacity:1;transform:translateY(0);pointer-events:all;position:relative;}
+.slide.exit{opacity:0;transform:translateY(-14px);}
+.s-act{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:inline-block;}
+.s-title{font-size:32px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:8px;}
+.s-sub{font-size:16px;color:#8892b0;line-height:1.6;}
+.s-note{margin-top:18px;font-size:12px;color:#3a4468;border-top:1px solid #1e2540;padding-top:10px;}
+
+.slide--title{text-align:center;display:flex!important;flex-direction:column;justify-content:center;align-items:center;padding:60px;}
+.slide--title .s-title{font-size:48px;margin-bottom:14px;}
+
+.slide--callout .big-num{font-size:64px;font-weight:800;line-height:1;margin-bottom:4px;}
+.slide--callout .big-unit{font-size:19px;color:#8892b0;margin-bottom:14px;}
+
+.break-box{border-left:3px solid #dc2626;background:rgba(220,38,38,.07);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:14px;}
+.break-box p{font-size:16px;color:#fca5a5;line-height:1.65;}
+
+.opts{display:flex;flex-direction:column;gap:8px;margin:12px 0 10px;}
+.opt{border-radius:8px;padding:11px 15px;border:1px solid;}
+.opt.no{background:#120606;border-color:#3a0e0e;}
+.opt.partial{background:#121003;border-color:#3a2e08;}
+.opt-name{font-size:12.5px;font-weight:600;color:#e2e8f0;margin-bottom:3px;}
+.opt-appeal{font-size:11.5px;color:#4a5580;margin-bottom:5px;font-style:italic;}
+.opt-verdict{font-size:12.5px;line-height:1.55;}
+.opt.no .opt-verdict{color:#f87171;}
+.opt.partial .opt-verdict{color:#fbbf24;}
+.opt-pill{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:3px;margin-right:5px;vertical-align:middle;}
+.opt.no .opt-pill{background:#3a0e0e;color:#f87171;}
+.opt.partial .opt-pill{background:#3a2e08;color:#fbbf24;}
+
+.dec-box{border-left:3px solid #16a34a;background:rgba(22,163,74,.07);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:4px;}
+.dec-label{font-size:9px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;}
+.dec-box p{font-size:15px;color:#86efac;line-height:1.65;}
+
+.insight-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.ins-col{border-radius:8px;padding:14px 16px;}
+.ins-col.bad{background:#120606;border:1px solid #3a1010;}
+.ins-col.good{background:#060e06;border:1px solid #0e3010;}
+.ins-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;}
+.ins-col.bad .ins-head{color:#ef4444;}
+.ins-col.good .ins-head{color:#16a34a;}
+.ins-col p{font-size:13.5px;line-height:1.6;color:#8892b0;}
+.ins-col p strong{color:#e2e8f0;}
+
+.item-list{margin-top:12px;display:flex;flex-direction:column;gap:9px;}
+.item-row{display:flex;gap:10px;align-items:flex-start;}
+.item-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:3px 8px;border-radius:5px;background:#1e2a3a;color:#7dd3fc;white-space:nowrap;margin-top:2px;flex-shrink:0;}
+.item-text{font-size:14.5px;color:#8892b0;line-height:1.5;}
+.item-text strong{color:#e2e8f0;}
+
+.agenda-list{margin-top:16px;display:flex;flex-direction:column;gap:11px;}
+.ag-row{display:flex;gap:12px;align-items:flex-start;}
+.ag-num{font-size:22px;font-weight:800;line-height:1;flex-shrink:0;width:34px;}
+.ag-text{font-size:15px;color:#8892b0;padding-top:3px;line-height:1.4;}
+
+.code-block{background:#0a0e18;border:1px solid #1e2540;border-radius:10px;padding:16px 18px;font-family:'Cascadia Code','Fira Code',monospace;font-size:12.5px;color:#7dd3fc;line-height:1.8;margin-top:12px;white-space:pre;}
+.code-note{margin-top:10px;font-size:13px;color:#5a6494;line-height:1.5;}
+
+.data-tbl{width:100%;border-collapse:collapse;margin-top:12px;font-size:13.5px;}
+.data-tbl th{padding:7px 11px;background:#0a0e18;color:#3a4468;font-size:10px;text-transform:uppercase;letter-spacing:.06em;text-align:left;}
+.data-tbl td{padding:9px 11px;border-bottom:1px solid #181d2c;line-height:1.4;}
+.data-tbl tr:last-child td{border:none;}
+.data-tbl td:first-child{color:#7dd3fc;font-weight:600;font-size:12.5px;}
+.data-tbl td:nth-child(2){color:#c3cfe2;}
+.data-tbl td:last-child{color:#5a6494;}
+
+.fail-list{margin-top:12px;display:flex;flex-direction:column;gap:7px;}
+.fail-row{display:flex;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid rgba(22,163,74,.2);background:rgba(22,163,74,.04);}
+.fail-check{color:#16a34a;font-size:15px;flex-shrink:0;padding-top:1px;}
+.fail-scenario{font-size:12.5px;font-weight:600;color:#c3cfe2;margin-bottom:2px;}
+.fail-result{font-size:12.5px;color:#5a6494;line-height:1.4;}
+
+.closing-items{margin-top:32px;display:flex;flex-direction:column;gap:18px;}
+.closing-item{display:flex;gap:14px;align-items:flex-start;}
+.closing-n{font-size:26px;font-weight:800;line-height:1;flex-shrink:0;width:36px;}
+.closing-text strong{display:block;font-size:16px;color:#e2e8f0;margin-bottom:3px;}
+.closing-text span{font-size:13.5px;color:#5a6494;line-height:1.5;}
+</style>
+</head>
+<body>
+
+<div id="chrome">
+  <div id="act-dot"></div>
+  <span id="act-label"></span>
+  <span id="slide-num"></span>
+  <span id="nav-hint">Enter / → next &nbsp;·&nbsp; ← back &nbsp;·&nbsp; click to advance</span>
+  <a href="hld.html" class="chrome-btn">Full HLD</a>
+</div>
+
+<div id="stage">
+  <div id="content-panel"><div id="slide-mount"></div></div>
+  <div id="map-panel">
+    <div class="map-title">Architecture — current state</div>
+    <svg id="map-svg" viewBox="0 0 314 214" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="map-legend">
+      <div class="leg-row"><div class="leg-dot" style="background:#1e2540"></div>not yet introduced</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#374162"></div>in the system</div>
+      <div class="leg-row" id="leg-active"><div class="leg-dot" style="background:#00b4d8"></div>focus</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#dc2626"></div>breaking</div>
+    </div>
+  </div>
+</div>
+<div id="progress"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// MAP — two non-overlapping sections
+//  Section A (naive):      y=0..52
+//  Section B (production): y=62..214
+// ─────────────────────────────────────────────────────────────────────────────
+const N = {
+  // ── Section A: naive (y 0–52) ──────────────────────────────────────────────
+  buyer_n:    {x:2,   y:6,   w:54, h:22, label:"Buy Order"},
+  seller_n:   {x:2,   y:32,  w:54, h:22, label:"Sell Order"},
+  server_n:   {x:72,  y:19,  w:60, h:22, label:"API Server"},
+  db_n:       {x:152, y:19,  w:72, h:22, label:"Orders DB"},
+
+  // ── Section B: production (y 62–214) ─────────────────────────────────────
+  trader:     {x:2,   y:76,  w:54, h:22, label:"Trader"},
+  broker:     {x:2,   y:106, w:54, h:22, label:"Broker"},
+  gateway:    {x:72,  y:91,  w:60, h:22, label:"Ord. Gateway"},
+  sequencer:  {x:148, y:62,  w:72, h:22, label:"Sequencer"},
+  match_eng:  {x:148, y:92,  w:72, h:22, label:"Match Engine"},
+  oms:        {x:148, y:122, w:72, h:22, label:"OMS"},
+  risk:       {x:148, y:152, w:72, h:22, label:"Risk Engine"},
+  mktdata:    {x:148, y:182, w:72, h:22, label:"Mkt. Data Svc"},
+  kafka:      {x:234, y:62,  w:76, h:22, label:"Kafka"},
+  order_db:   {x:234, y:92,  w:76, h:22, label:"PostgreSQL"},
+  trade_db:   {x:234, y:122, w:76, h:22, label:"Cassandra"},
+  redis:      {x:234, y:152, w:76, h:22, label:"Redis"},
+  timeseries: {x:234, y:182, w:76, h:22, label:"kdb+"},
+};
+
+const CONNS = [
+  // Section A
+  ['buyer_n','server_n'], ['seller_n','server_n'], ['server_n','db_n'],
+  // Section B
+  ['trader','gateway'], ['broker','gateway'],
+  ['gateway','sequencer'], ['gateway','risk'],
+  ['sequencer','kafka'],
+  ['kafka','match_eng'],
+  ['match_eng','kafka'],
+  ['match_eng','order_db'],
+  ['match_eng','trade_db'],
+  ['oms','order_db'], ['oms','redis'],
+  ['risk','redis'],
+  ['kafka','mktdata'],
+  ['mktdata','timeseries'],
+];
+
+const NAIVE = ['buyer_n','seller_n','server_n','db_n'];
+const ALL   = ['trader','broker','gateway','sequencer','match_eng','oms','risk','mktdata',
+               'kafka','order_db','trade_db','redis','timeseries'];
+
+// ── Build SVG ─────────────────────────────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag,attrs={}){const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));return e;}
+
+(function buildMap(){
+  const svg = document.getElementById('map-svg');
+  const defs = el('defs');
+  defs.innerHTML = `
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-red" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>`;
+  svg.appendChild(defs);
+
+  const la = el('text',{x:2,y:2,'font-size':'6.5','font-family':'Segoe UI,system-ui,sans-serif',
+    'font-weight':'600','text-anchor':'start','dominant-baseline':'hanging'});
+  la.style.fill='#1e2540'; la.textContent='NAIVE DESIGN'; svg.appendChild(la);
+
+  const div = el('line',{x1:0,y1:57,x2:314,y2:57,stroke:'#1a1f30','stroke-width':'1','stroke-dasharray':'3,4'});
+  svg.appendChild(div);
+
+  const lb = el('text',{x:2,y:59,'font-size':'6.5','font-family':'Segoe UI,system-ui,sans-serif',
+    'font-weight':'600','text-anchor':'start','dominant-baseline':'hanging'});
+  lb.style.fill='#1e2540'; lb.textContent='PRODUCTION SYSTEM'; svg.appendChild(lb);
+
+  const cg = el('g',{id:'conns'});
+  CONNS.forEach(([a,b])=>{
+    const na=N[a],nb=N[b]; if(!na||!nb) return;
+    const line = el('line',{
+      id:`c-${a}-${b}`,
+      x1:na.x+na.w, y1:na.y+na.h/2,
+      x2:nb.x,      y2:nb.y+nb.h/2,
+      stroke:'#1e2540','stroke-width':'1',
+    });
+    line.style.transition='stroke .45s,opacity .45s';
+    line.style.opacity='0';
+    cg.appendChild(line);
+  });
+  svg.appendChild(cg);
+
+  const ng = el('g',{id:'nodes'});
+  Object.entries(N).forEach(([id,n])=>{
+    const g = el('g',{id:`nd-${id}`});
+    const r = el('rect',{id:`nd-${id}-r`,x:n.x,y:n.y,width:n.w,height:n.h,rx:'5'});
+    r.style.transition='fill .45s,stroke .45s,filter .45s';
+    const t = el('text',{
+      id:`nd-${id}-t`,x:n.x+n.w/2,y:n.y+n.h/2,
+      'text-anchor':'middle','dominant-baseline':'central',
+      'font-size':'7','font-family':'Segoe UI,system-ui,sans-serif','font-weight':'500',
+    });
+    t.style.transition='fill .45s';
+    t.textContent=n.label;
+    g.appendChild(r); g.appendChild(t); ng.appendChild(g);
+  });
+  svg.appendChild(ng);
+
+  Object.keys(N).forEach(id=>setNode(id,'ghost'));
+})();
+
+function hexA(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},${a})`;}
+
+function setNode(id,state,color){
+  const r=document.getElementById(`nd-${id}-r`);
+  const t=document.getElementById(`nd-${id}-t`);
+  if(!r||!t) return;
+  if(state==='ghost')  { r.style.fill='#0d1017';  r.style.stroke='#14192a'; r.style.filter='none'; t.style.fill='#1a2038'; }
+  if(state==='visible'){ r.style.fill='#131b2a';  r.style.stroke='#283050'; r.style.filter='none'; t.style.fill='#566080'; }
+  if(state==='active') { const c=color||'#00b4d8'; r.style.fill=hexA(c,.13); r.style.stroke=c; r.style.filter='url(#glow)'; t.style.fill=c; }
+  if(state==='broken') { r.style.fill='#1a0606'; r.style.stroke='#dc2626'; r.style.filter='url(#glow-red)'; t.style.fill='#f87171'; }
+}
+
+function updateMap(state){
+  const show=new Set(state.show||[]);
+  const broken=new Set(state.broken||[]);
+  Object.keys(N).forEach(id=>{
+    if(broken.has(id))         setNode(id,'broken');
+    else if(id===state.active) setNode(id,'active',state.activeColor);
+    else if(show.has(id))      setNode(id,'visible');
+    else                       setNode(id,'ghost');
+  });
+  CONNS.forEach(([a,b])=>{
+    const line=document.getElementById(`c-${a}-${b}`); if(!line) return;
+    const av=show.has(a)||broken.has(a)||a===state.active;
+    const bv=show.has(b)||broken.has(b)||b===state.active;
+    if(av&&bv){
+      line.style.opacity='.5';
+      const c=state.activeColor||'#00b4d8';
+      if(broken.has(a)||broken.has(b)) line.setAttribute('stroke','#3a1010');
+      else if(a===state.active||b===state.active) line.setAttribute('stroke',hexA(c,.6));
+      else line.setAttribute('stroke','#243050');
+    } else {
+      line.style.opacity='0';
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SLIDES
+// ─────────────────────────────────────────────────────────────────────────────
+const SLIDES = [
+
+// ── ACT 1: THE BET ────────────────────────────────────────────────────────────
+{
+  act:'',actColor:'#00b4d8',full:true,
+  map:{show:[],active:null,broken:[]},
+  html:`<div class="slide slide--title">
+    <div class="s-act" style="color:#00b4d8">System Design Interview</div>
+    <div class="s-title">Designing a Stock Exchange</div>
+    <div class="s-sub">Every component earned through a problem.<br>Not one assumed upfront.</div>
+    <div class="s-note" style="margin-top:28px;border:none">Enter / → advance &nbsp;·&nbsp; ← back &nbsp;·&nbsp; click right side to advance</div>
+  </div>`
+},
+{
+  act:'The Stakes',actColor:'#00b4d8',
+  map:{show:['buyer_n','seller_n'],active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">The Stakes</div>
+    <div class="s-title">Two sides. One contract.</div>
+    <div class="item-list">
+      <div class="item-row"><span class="item-label">Traders</span><span class="item-text">Place limit and market orders to buy or sell shares. Receive execution reports: filled, partial, cancelled.</span></div>
+      <div class="item-row"><span class="item-label">Exchange</span><span class="item-text">Match buy and sell orders at the best available price using <strong>strict price-time priority</strong>. Broadcast real-time market data.</span></div>
+      <div class="item-row"><span class="item-label">System</span><span class="item-text">Match in <strong>&lt;10 microseconds</strong> · 99.99% uptime · <strong>every accepted order executes or is explicitly cancelled — nothing disappears.</strong></span></div>
+      <div class="item-row"><span class="item-label" style="background:#1f0808;color:#f87171">Out of scope</span><span class="item-text">Settlement &amp; clearing (T+2 via DTCC), KYC, smart order routing, margin calculation.</span></div>
+    </div>
+  </div>`
+},
+{
+  act:'The Stakes',actColor:'#ef4444',
+  map:{show:['buyer_n','seller_n'],active:null,broken:[]},
+  html:`<div class="slide slide--callout">
+    <div class="s-act" style="color:#ef4444">The Constraint That Shapes Everything</div>
+    <div class="big-num" style="color:#ef4444">10</div>
+    <div class="big-unit">microseconds — order-to-match latency target</div>
+    <div class="s-sub" style="max-width:480px">One network round-trip to a database takes 500–2,000 µs. That's 50–200× the entire latency budget.</div>
+    <div class="s-sub" style="max-width:480px;margin-top:8px">This single number eliminates every solution that touches a network or a disk on the hot path. Every architecture decision below is a consequence of it.</div>
+  </div>`
+},
+
+// ── ACT 2: NAIVE DESIGN BREAKS ───────────────────────────────────────────────
+{
+  act:'Naive Design',actColor:'#f59e0b',
+  map:{show:NAIVE,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f59e0b">Naive Design</div>
+    <div class="s-title">Start with the simplest thing.</div>
+    <div class="s-sub" style="margin-top:8px">Buy and sell orders go to an API server. Server queries the database for the best counterparty order. On a match, updates both rows and records a trade. Simple. ACID-correct. Let's break it.</div>
+    <div class="s-sub" style="margin-top:14px;color:#3a4468">Watch the map — it shows the current system. Now let's find where it fails.</div>
+    <div class="s-note">Sections: top = naive design · bottom = production (coming soon)</div>
+  </div>`
+},
+{
+  act:'Break #1',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #1</div>
+    <div class="s-title">The database is 150× too slow.</div>
+    <div class="break-box"><p>One match requires 3 DB round-trips (SELECT best order + UPDATE matched + INSERT trade).<br><strong>3 × 500 µs = 1.5 ms minimum.</strong><br><br>Target: 10 µs. We are <strong>150× over budget before we've even started</strong>. And we haven't accounted for 1M orders/sec write pressure collapsing the index.</p></div>
+    <div class="s-note">Database flashing red — it's the bottleneck.</div>
+  </div>`
+},
+{
+  act:'Break #2',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['server_n','db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #2</div>
+    <div class="s-title">Two servers sell the same share twice.</div>
+    <div class="break-box"><p>Scale to multiple API servers. Server A and Server B both query for the best ask on AAPL simultaneously. Both find order #99 (100 shares @ $150). Both decide to match against it. Both execute.<br><br><strong>The same 100 shares are sold to two buyers.</strong> DB row-locking "fixes" this but serializes all matches through one lock — throughput collapses.</p></div>
+  </div>`
+},
+{
+  act:'Break #3',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['server_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #3</div>
+    <div class="s-title">Market data fan-out drowns the exchange.</div>
+    <div class="break-box"><p>Every trade must be pushed to ~1,000,000 subscribers. If the API server handles both matching <em>and</em> broadcasting, one slow subscriber (network lag, GC pause, overloaded app) <strong>stalls the matching loop</strong>.<br><br>One bad client. The entire exchange freezes.</p></div>
+  </div>`
+},
+{
+  act:'Break #4',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['buyer_n','seller_n','server_n','db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #4</div>
+    <div class="s-title">Server crash = orders silently disappear.</div>
+    <div class="break-box"><p>Orders travel: Client → API Server → Database. At peak, thousands of orders are in-flight (received by server, not yet written to DB). On crash, <strong>these orders are lost with no trace</strong>.<br><br>The exchange cannot tell a trader "we're not sure if your order was received." That is not a valid state for a regulated market.</p></div>
+  </div>`
+},
+{
+  act:'Design Agenda',actColor:'#f59e0b',
+  map:{show:NAIVE,active:null,broken:['buyer_n','seller_n','server_n','db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f59e0b">Design Agenda</div>
+    <div class="s-title">Four breaks. Four fixes. In order.</div>
+    <div class="agenda-list">
+      <div class="ag-row"><div class="ag-num" style="color:#ef4444">01</div><div class="ag-text">The DB is 150× too slow — move matching to process memory</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#8b5cf6">02</div><div class="ag-text">Two servers, same order — strict sequencing eliminates the race</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#f97316">03</div><div class="ag-text">1M subscribers, one event — decouple delivery from matching</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#06b6d4">04</div><div class="ag-text">Crash = lost orders — the sequenced log is the write-ahead log</div></div>
+    </div>
+    <div class="s-note">Each fix is independent. Each one also enables the next. Watch how they connect.</div>
+  </div>`
+},
+
+// ── ACT 3: FIX IT PIECE BY PIECE ─────────────────────────────────────────────
+
+// Fix 1a: In-memory order book
+{
+  act:'Fix #1 — Matching Engine',actColor:'#ef4444',
+  map:{show:['trader','broker','gateway','match_eng'],active:'match_eng',activeColor:'#ef4444',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Fix #1 — In-Memory Matching Engine</div>
+    <div class="s-title">What data structure matches in O(1)?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>PostgreSQL with price-time composite index</div>
+        <div class="opt-appeal">ACID, familiar, handles concurrent writes, already in the stack.</div>
+        <div class="opt-verdict">3 round-trips per match × 500 µs each = 1.5 ms minimum. 150× over budget. Under 1M writes/sec, index maintenance causes cascading stalls. No path to 10 µs.</div>
+      </div>
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Redis sorted set per symbol</div>
+        <div class="opt-appeal">In-memory, O(log n) inserts, ~100 µs network round-trip — 10× better than PostgreSQL.</div>
+        <div class="opt-verdict">Still 10× too slow. No concept of FIFO within a price level — price-time priority is impossible without custom module. Atomic match-and-execute across buy/sell sets requires Lua script with no native support.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — In-Process Price-Level Map</div><p>Order book lives in the matching engine's heap. <strong>Buy side:</strong> TreeMap(price DESC) → FIFO queue of orders. <strong>Sell side:</strong> TreeMap(price ASC) → FIFO queue. Match check: <code>best_bid.price ≥ best_ask.price</code> → O(1). Zero network. Zero disk. Price-time priority is structurally guaranteed.</p></div>
+  </div>`
+},
+
+// Fix 1b: Single-threaded per symbol
+{
+  act:'Fix #1 — Matching Engine',actColor:'#ef4444',
+  map:{show:['trader','broker','gateway','match_eng'],active:'match_eng',activeColor:'#ef4444',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Fix #1 — Matching Engine</div>
+    <div class="s-title">Why is it single-threaded?</div>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">✕ Multi-threaded per symbol</div>
+        <p>Two threads could see the same best ask simultaneously and both decide to match against it. Fixing this requires a mutex on every order book read and write. Acquiring a mutex costs <strong>50–200 ns</strong> — already 5–20× over the 10 µs budget for just the lock overhead. Contention under load makes it worse.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ One thread per symbol</div>
+        <p>No shared mutable state. No locks. No cache-line contention. Orders are processed strictly one-at-a-time. Correctness is <strong>structurally guaranteed</strong> — you can't have a race condition with one thread. 8,000 symbols → 8,000 threads across a cluster, each at near-100% utilization.</p>
+      </div>
+    </div>
+    <div class="s-note">The matching engine is single-threaded not because we lack cores, but because parallelism adds locks that cost more nanoseconds than the match itself.</div>
+  </div>`
+},
+
+// Fix 2: Sequencer
+{
+  act:'Fix #2 — Sequencer',actColor:'#8b5cf6',
+  map:{show:['trader','broker','gateway','sequencer','match_eng','kafka'],active:'sequencer',activeColor:'#8b5cf6',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#8b5cf6">Fix #2 — The Sequencer</div>
+    <div class="s-title">How do we guarantee strict order arrival?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Database auto-increment sequence number</div>
+        <div class="opt-appeal">Atomic, ACID, monotonically increasing — one DB call assigns a globally unique sequence number.</div>
+        <div class="opt-verdict">Requires a DB round-trip per order (1–5 ms) on the critical path. At 1M orders/sec, the sequence DB is the new bottleneck. Two HA instances mean two generators — sequences have gaps and are non-monotonic across failover.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Better</span>Kafka single partition per symbol</div>
+        <div class="opt-appeal">Ordering is guaranteed within a partition. Durable. No extra service. Clients publish directly.</div>
+        <div class="opt-verdict">Sequence numbers are assigned at Kafka write time — after the client's network trip to the broker. Pre-trade risk checks happen after sequencing, not before. Harder to add a validation step between "receive order" and "sequence it."</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Dedicated Sequencer Service</div><p>A single-threaded process receives orders from all gateways, runs pre-validation, stamps a <strong>monotonically increasing sequence number</strong>, and publishes to Kafka (single partition per symbol). The matching engine reads in strict offset order. Given the same Kafka log, <strong>the same trades result every time</strong> — determinism unlocks crash recovery for free.</p></div>
+  </div>`
+},
+
+// Fix 3a: Kafka fan-out
+{
+  act:'Fix #3 — Market Data',actColor:'#f97316',
+  map:{show:['trader','broker','gateway','sequencer','match_eng','kafka','mktdata'],active:'kafka',activeColor:'#f97316',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f97316">Fix #3 — Market Data Distribution</div>
+    <div class="s-title">How do we push to 1M subscribers without blocking matching?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Matching engine pushes directly to all subscribers</div>
+        <div class="opt-appeal">Lowest latency — no middleware. Every subscriber gets the update immediately from source.</div>
+        <div class="opt-verdict">The matching engine now manages 1M open connections. A slow subscriber stalls the matching loop. A GC pause on the matching thread pauses both matching AND delivery. Two completely different workloads share one thread.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Better</span>Matching engine → Kafka → WebSocket fleet</div>
+        <div class="opt-appeal">Decoupled. Matching never blocks on delivery. Horizontally scalable fan-out tier.</div>
+        <div class="opt-verdict">Each WebSocket server handles ~50K connections. 1M subscribers = 20 servers. Need a routing layer to find which server holds each subscriber's connection. Good architecture, but one more hop and one more failure point.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Ring Buffer → Kafka → Market Data Service</div><p>Matching engine writes trade events to a <strong>lock-free ring buffer</strong> (LMAX Disruptor — zero heap allocation, zero GC). A publisher thread drains the ring buffer to Kafka asynchronously — matching never blocks. Market Data Service consumes Kafka and fans out: <strong>WebSocket</strong> for retail clients, <strong>UDP multicast</strong> for HFT co-location clients (one packet, received by all co-loc clients simultaneously — bandwidth cost per additional subscriber is zero).</p></div>
+  </div>`
+},
+
+// Fix 3b: mktdata service detail
+{
+  act:'Fix #3 — Market Data',actColor:'#f97316',
+  map:{show:['trader','broker','gateway','sequencer','match_eng','kafka','mktdata','timeseries'],active:'mktdata',activeColor:'#f97316',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f97316">Fix #3 — Market Data</div>
+    <div class="s-title">WebSocket for retail. UDP multicast for HFT.</div>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">TCP (WebSocket) for everyone</div>
+        <p>TCP guarantees delivery via ACKs and retransmits. At 1M messages/sec across 1,000 HFT clients, this is <strong>1 billion ACKs/sec</strong> just for one symbol's feed. TCP per-connection state at this scale is unmanageable. HFT clients pay for co-location precisely to get lower-level access.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ UDP multicast for co-location</div>
+        <p>One UDP packet is received by all multicast subscribers simultaneously. <strong>No ACKs. No per-subscriber state.</strong> HFT clients handle packet loss with their own gap-fill requests. Cost per additional subscriber: 0 bytes of bandwidth. Latency: sub-millisecond on private exchange network.</p>
+      </div>
+    </div>
+    <div class="s-note">kdb+ stores every quote and trade with nanosecond timestamps — used by quant research and compliance. Not on the trading hot path.</div>
+  </div>`
+},
+
+// Fix 4: Event sourcing
+{
+  act:'Fix #4 — Crash Recovery',actColor:'#06b6d4',
+  map:{show:['trader','broker','gateway','sequencer','match_eng','kafka','mktdata','order_db','trade_db'],active:'kafka',activeColor:'#06b6d4',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#06b6d4">Fix #4 — Event Sourcing &amp; Crash Recovery</div>
+    <div class="s-title">How do we survive a matching engine crash?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Snapshot the order book to disk every N seconds</div>
+        <div class="opt-appeal">Periodic snapshots are simple. On restart, load the last snapshot — done.</div>
+        <div class="opt-verdict">Up to N seconds of orders are lost on crash. Re-processing those orders at current prices produces different trades — prices have moved. Regulatorily unacceptable. A 5-second snapshot means up to 5,000,000 orders at risk at peak.</div>
+      </div>
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Synchronously write to DB before matching</div>
+        <div class="opt-appeal">Every order is durable before it's processed. Nothing is ever lost.</div>
+        <div class="opt-verdict">Adds a DB round-trip (1–5 ms) to every order before matching. We are back to Break #1. The hot path is throttled to DB write speed. All of Fix #1's work is undone.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — The Kafka Log IS the Write-Ahead Log</div><p>The Sequencer already writes every order to Kafka <em>before</em> the matching engine sees it. The matching engine is deterministic: <code>state = reduce(events[0..N])</code>. On crash: restart, replay from last committed Kafka offset. <strong>Same log → same order book state.</strong> Recovery takes ~30 seconds for 1M events. The exchange declares a technical halt, recovers, resumes. Zero order loss.</p></div>
+  </div>`
+},
+
+// Fix 4b: Event sourcing elegance
+{
+  act:'Fix #4 — Crash Recovery',actColor:'#06b6d4',
+  map:{show:['trader','broker','gateway','sequencer','match_eng','kafka','mktdata','order_db','trade_db'],active:'match_eng',activeColor:'#06b6d4',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#06b6d4">Fix #4 — Event Sourcing</div>
+    <div class="s-title">The matching engine as a pure function.</div>
+    <div class="code-block">// The matching engine in pseudocode
+function replay(kafkaLog, fromOffset):
+  book = emptyOrderBook()
+  for event in kafkaLog.from(fromOffset):
+    if event.type == NEW_ORDER:
+      book.add(event.order)
+      executeMatches(book)       // same logic as live
+    if event.type == CANCEL:
+      book.remove(event.orderId)
+  return book   // exact state at crash point</div>
+    <div class="code-note">The matching engine is stateless relative to its log. Crash recovery, audit replay, and running a shadow exchange for testing all use the same replay function.</div>
+  </div>`
+},
+
+// Risk & OMS
+{
+  act:'Fix #5 — Risk &amp; OMS',actColor:'#16a34a',
+  map:{show:ALL,active:'risk',activeColor:'#16a34a',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#16a34a">Fix #5 — Risk Engine &amp; OMS</div>
+    <div class="s-title">Stop bad orders before they reach the book.</div>
+    <div class="s-sub" style="margin-bottom:10px">A trader submitting an order for 10M shares they can't afford — if the matching engine processes it first, unwinding the trade requires regulatory notification and market-moving cancellations.</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Check limits after matching</div>
+        <div class="opt-appeal">Matching is faster — don't add latency to the hot path.</div>
+        <div class="opt-verdict">The trade has already executed. Unwinding it is a regulatory event. The damage is done before the check runs.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Synchronous Risk Check at the Gateway</div><p>Every order passes through the Risk Engine <em>before</em> reaching the Sequencer. Checks are O(1) Redis reads: <code>HGET account:42 buying_power</code>. Buying power, position limits, price sanity (±5% of last trade), circuit breaker flags. The <strong>OMS</strong> updates Redis balances asynchronously as Kafka trade events arrive — there is a small in-flight window of inconsistency, covered by regulatory capital buffers.</p></div>
+  </div>`
+},
+
+// API Design
+{
+  act:'API Design',actColor:'#00b4d8',
+  map:{show:ALL,active:'gateway',activeColor:'#00b4d8',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">API Design</div>
+    <div class="s-title">FIX protocol, not REST. One key insight.</div>
+    <div class="s-sub" style="margin-bottom:10px">REST requires a new request per order — HTTP headers add 200–500 bytes overhead. FIX (Financial Information eXchange) is a persistent binary-ish TCP protocol: one connection, many orders, no per-message headers.</div>
+    <div class="item-list">
+      <div class="item-row"><span class="item-label">NewOrderSingle</span><span class="item-text">→ client sends <code>client_order_id</code> (their ID, for idempotency). Exchange returns <code>exchange_order_id</code>. If the network drops, re-send same <code>client_order_id</code> — it's deduped at the gateway. <strong>Never creates a duplicate order.</strong></span></div>
+      <div class="item-row"><span class="item-label">OrderCancelRequest</span><span class="item-text">Cancel by <code>exchange_order_id</code>, not symbol+price. Price-level cancel = O(n) scan. ID cancel = O(1) hash lookup.</span></div>
+      <div class="item-row"><span class="item-label">ExecutionReport</span><span class="item-text">Server-initiated. Sent on: ack, partial fill, full fill, cancel confirm. The client never polls — reports arrive on the open connection asynchronously.</span></div>
+      <div class="item-row"><span class="item-label">Mkt. Data Sub</span><span class="item-text">Subscribe per-symbol. Filtering happens server-side. Retail: WebSocket JSON. HFT: UDP multicast on co-location network.</span></div>
+    </div>
+  </div>`
+},
+
+// ── ACT 4: THE FULL PICTURE ───────────────────────────────────────────────────
+{
+  act:'The Full Picture',actColor:'#00b4d8',
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">The Full Picture</div>
+    <div class="s-title">The system you just built.</div>
+    <div class="s-sub" style="margin-top:6px">Every box in the map arrived through a constraint. Not one was assumed upfront.</div>
+    <div class="item-list" style="margin-top:18px">
+      <div class="item-row"><span class="item-label" style="background:#1f0808;color:#f87171">150× too slow</span><span class="item-text">→ In-memory order book (price-level map) + single-threaded matching engine per symbol</span></div>
+      <div class="item-row"><span class="item-label" style="background:#10082a;color:#c4b5fd">race condition</span><span class="item-text">→ Sequencer assigns monotonic sequence numbers before matching engine sees any order</span></div>
+      <div class="item-row"><span class="item-label" style="background:#1a1006;color:#fdba74">1M subscribers</span><span class="item-text">→ Disruptor ring buffer → Kafka → Market Data Service → WebSocket / UDP multicast</span></div>
+      <div class="item-row"><span class="item-label" style="background:#060e06;color:#86efac">crash recovery</span><span class="item-text">→ Kafka sequenced log is the WAL. Deterministic replay reconstructs exact order book state.</span></div>
+    </div>
+  </div>`
+},
+{
+  act:'The Full Picture',actColor:'#00b4d8',
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">Data Models</div>
+    <div class="s-title">What goes where — and why.</div>
+    <table class="data-tbl">
+      <thead><tr><th>Store</th><th>What lives there</th><th>Why this store</th></tr></thead>
+      <tbody>
+        <tr><td>Process memory</td><td>Live order book (price-level maps)</td><td>Zero network, zero disk. Only store that meets 10 µs. Rebuilt from Kafka on restart.</td></tr>
+        <tr><td>Kafka</td><td>Every order event with sequence number</td><td>Durable, ordered, replayable. The WAL. Also the market data source. Three uses, one component.</td></tr>
+        <tr><td>PostgreSQL</td><td>Order status per order ID</td><td>ACID for correctness. Traders query "is my order open?" — ~350 reads/sec, well within limits.</td></tr>
+        <tr><td>Cassandra</td><td>Trade history (symbol, time, price, qty)</td><td>Append-only time-series. Partitioned by symbol+date. LSM-tree built for this pattern.</td></tr>
+        <tr><td>Redis</td><td>Account balances, position totals, halt flags</td><td>Sub-ms reads for pre-trade risk. Updated asynchronously by OMS from Kafka trade events.</td></tr>
+      </tbody>
+    </table>
+  </div>`
+},
+{
+  act:'Stress Test',actColor:'#00b4d8',
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">Stress Test</div>
+    <div class="s-title">Does the design hold under failure?</div>
+    <div class="fail-list">
+      <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Matching engine crashes</div><div class="fail-result">Failover instance replays Kafka from last committed offset. Deterministic — same log, same state. Exchange declares technical halt, recovers in ~30s.</div></div></div>
+      <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Sequencer crashes</div><div class="fail-result">Standby Sequencer resumes from last sequence number in ZooKeeper. In-flight orders are re-submitted by clients on timeout (client_order_id deduplication prevents duplicates).</div></div></div>
+      <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Flash crash (price drops 5% in 60 seconds)</div><div class="fail-result">Circuit breaker flag set in Redis by the Risk Engine. All gateways reject new orders for that symbol within one Redis read (~200 µs). Matching engine continues processing already-sequenced orders until queue drains.</div></div></div>
+      <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Market data consumer lag</div><div class="fail-result">Kafka provides backpressure isolation — the market data service's lag has zero effect on the matching engine. Subscribers see delayed data; matching proceeds at full speed.</div></div></div>
+    </div>
+  </div>`
+},
+
+// Closing
+{
+  act:'',actColor:'#00b4d8',full:true,
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:56px 80px;">
+    <div style="max-width:640px;width:100%">
+      <div class="s-act" style="color:#00b4d8;margin-bottom:18px">The Three Hard Problems</div>
+      <div class="s-title" style="font-size:26px;margin-bottom:28px">Everything else follows from standard patterns.</div>
+      <div class="closing-items">
+        <div class="closing-item">
+          <div class="closing-n" style="color:#ef4444">01</div>
+          <div class="closing-text">
+            <strong>10 µs matching without a database</strong>
+            <span>In-memory price-level map + single-threaded per symbol. No locks, no network, no disk on the hot path. Speed falls out of the model — not engineered in.</span>
+          </div>
+        </div>
+        <div class="closing-item">
+          <div class="closing-n" style="color:#8b5cf6">02</div>
+          <div class="closing-text">
+            <strong>Determinism through the Sequencer</strong>
+            <span>One thread assigns monotonic sequence numbers before the matching engine sees anything. Determinism gives you crash recovery, audit replay, and race-condition elimination — all from one component.</span>
+          </div>
+        </div>
+        <div class="closing-item">
+          <div class="closing-n" style="color:#06b6d4">03</div>
+          <div class="closing-text">
+            <strong>The Kafka log does three jobs</strong>
+            <span>It's the sequenced order log, the write-ahead log for crash recovery, and the market data event source. The Sequencer (Fix #2) was added to solve ordering — and gave us event sourcing for free.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`
+},
+];
+
+// ── RENDERER ──────────────────────────────────────────────────────────────────
+const mount  = document.getElementById('slide-mount');
+const cpanel = document.getElementById('content-panel');
+const mpanel = document.getElementById('map-panel');
+let cur = 0;
+
+function goTo(n){
+  if(n<0||n>=SLIDES.length) return;
+  const s=SLIDES[n];
+
+  const old = mount.querySelector('.slide.active');
+  if(old){ old.classList.add('exit'); setTimeout(()=>old.remove(),380); }
+  const wrap=document.createElement('div');
+  wrap.innerHTML=s.html;
+  const el=wrap.firstChild;
+  el.classList.add('active');
+  mount.appendChild(el);
+
+  if(s.full){ cpanel.classList.add('full'); mpanel.classList.add('hidden'); }
+  else       { cpanel.classList.remove('full'); mpanel.classList.remove('hidden'); }
+
+  updateMap(s.map);
+
+  const ac=s.actColor||'#00b4d8';
+  document.getElementById('act-dot').style.background=ac;
+  document.getElementById('act-label').style.color=ac;
+  document.getElementById('act-label').textContent=s.act||'';
+  document.getElementById('slide-num').textContent=`${n+1} / ${SLIDES.length}`;
+  document.getElementById('progress').style.width=`${(n+1)/SLIDES.length*100}%`;
+  document.getElementById('progress').style.background=ac;
+  document.getElementById('leg-active').querySelector('.leg-dot').style.background=ac;
+
+  cur=n;
+}
+
+goTo(0);
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='Enter'){ e.preventDefault(); goTo(cur+1); }
+  if(e.key==='ArrowLeft')                  { e.preventDefault(); goTo(cur-1); }
+  if(e.key==='Tab'&&e.shiftKey)            { e.preventDefault(); goTo(cur-1); }
+});
+document.getElementById('stage').addEventListener('click',e=>{
+  e.clientX/window.innerWidth>0.18 ? goTo(cur+1) : goTo(cur-1);
+});
+</script>
+</body>
+</html>
