@@ -1,975 +1,687 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <title>Designing Uber — Slideshow</title>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <style>
-    :root {
-      --bg: #0d1017;
-      --surface: #161922;
-      --border: #252a3d;
-      --text: #e2e8f0;
-      --muted: #8892b0;
-      --dim: #4a5580;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      height: 100vh;
-      overflow: hidden;
-      user-select: none;
-    }
+<meta charset="UTF-8"/>
+<title>Designing Uber</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0d1017;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden;user-select:none;}
 
-    /* ── Chrome ── */
-    #chrome {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 48px;
-      background: rgba(13,16,23,.92);
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      padding: 0 20px;
-      gap: 16px;
-      z-index: 20;
-      backdrop-filter: blur(8px);
-    }
-    #chapter-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      transition: background .4s;
-    }
-    #chapter-name {
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      transition: color .4s;
-    }
-    #slide-counter {
-      margin-left: auto;
-      font-size: 12px;
-      color: var(--dim);
-      font-variant-numeric: tabular-nums;
-    }
-    #nav-hint {
-      font-size: 11px;
-      color: var(--dim);
-    }
-    .chrome-link {
-      font-size: 11px;
-      color: var(--dim);
-      text-decoration: none;
-      border: 1px solid var(--border);
-      padding: 3px 10px;
-      border-radius: 5px;
-      transition: color .15s;
-    }
-    .chrome-link:hover { color: var(--text); }
+/* ── Chrome ── */
+#chrome{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(13,16,23,.95);border-bottom:1px solid #1e2540;display:flex;align-items:center;padding:0 20px;gap:12px;z-index:30;backdrop-filter:blur(8px);}
+#act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .5s;}
+#act-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;transition:color .5s;}
+#slide-num{margin-left:auto;font-size:11px;color:#3a4468;font-variant-numeric:tabular-nums;}
+#nav-hint{font-size:11px;color:#2e3560;}
+.chrome-btn{font-size:11px;color:#3a4468;text-decoration:none;border:1px solid #1e2540;padding:3px 10px;border-radius:5px;transition:color .15s;}
+.chrome-btn:hover{color:#8892b0;}
+#progress{position:fixed;bottom:0;left:0;height:3px;background:#00b4d8;transition:width .4s ease,background .5s;z-index:30;}
 
-    /* ── Progress bar ── */
-    #progress {
-      position: fixed;
-      bottom: 0; left: 0;
-      height: 3px;
-      background: #00b4d8;
-      transition: width .35s ease, background .4s;
-      z-index: 20;
-    }
+/* ── Stage ── */
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;}
+#content-panel{flex:0 0 65%;height:100%;position:relative;overflow:hidden;display:flex;align-items:center;padding:32px 52px 32px 56px;}
+#map-panel{flex:0 0 35%;height:100%;display:flex;flex-direction:column;justify-content:center;padding:24px 28px 24px 0;}
+#map-panel.hidden{display:none;}
+#content-panel.full{flex:0 0 100%;padding:0;}
 
-    /* ── Stage ── */
-    #stage {
-      position: fixed;
-      top: 48px; left: 0; right: 0; bottom: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-    }
+/* ── Map panel ── */
+.map-title{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#252a3d;margin-bottom:10px;text-align:center;}
+#map-svg{width:100%;height:auto;}
+.map-legend{display:flex;flex-direction:column;gap:5px;margin-top:14px;}
+.leg-row{display:flex;align-items:center;gap:7px;font-size:10px;color:#2e3560;}
+.leg-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
 
-    /* ── Slide ── */
-    .slide {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 80px;
-      opacity: 0;
-      transform: translateY(14px);
-      transition: opacity .35s ease, transform .35s ease;
-      pointer-events: none;
-    }
-    .slide.active {
-      opacity: 1;
-      transform: translateY(0);
-      pointer-events: all;
-    }
-    .slide.exit {
-      opacity: 0;
-      transform: translateY(-14px);
-    }
-    .slide-inner {
-      width: 100%;
-      max-width: 860px;
-    }
+/* ── Slide types ── */
+.slide{width:100%;opacity:0;transform:translateY(16px);transition:opacity .38s ease,transform .38s ease;pointer-events:none;position:absolute;}
+.slide.active{opacity:1;transform:translateY(0);pointer-events:all;position:relative;}
+.slide.exit{opacity:0;transform:translateY(-16px);}
 
-    /* ── Typography ── */
-    .slide-tag {
-      font-size: 11px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      margin-bottom: 16px;
-      display: inline-block;
-    }
-    .slide-title {
-      font-size: 38px;
-      font-weight: 700;
-      color: #fff;
-      line-height: 1.2;
-      margin-bottom: 10px;
-    }
-    .slide-subtitle {
-      font-size: 20px;
-      color: var(--muted);
-      line-height: 1.5;
-      margin-bottom: 8px;
-    }
-    .slide-body {
-      font-size: 17px;
-      color: var(--muted);
-      line-height: 1.7;
-    }
-    .slide-body strong { color: var(--text); }
-    .slide-note {
-      margin-top: 24px;
-      font-size: 13px;
-      color: var(--dim);
-      border-top: 1px solid var(--border);
-      padding-top: 12px;
-    }
+.s-act{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px;display:inline-block;}
+.s-title{font-size:34px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:10px;}
+.s-sub{font-size:17px;color:#8892b0;line-height:1.6;margin-bottom:6px;}
+.s-note{margin-top:20px;font-size:12px;color:#3a4468;border-top:1px solid #1e2540;padding-top:10px;}
 
-    /* ── Title slide ── */
-    .slide--title { text-align: center; }
-    .slide--title .slide-title { font-size: 52px; }
-    .slide--title .slide-subtitle { font-size: 22px; margin-top: 8px; }
+/* Title (full screen) */
+.slide--title{text-align:center;justify-content:center;align-items:center;flex-direction:column;padding:60px;}
+.slide--title .s-title{font-size:52px;margin-bottom:16px;}
 
-    /* ── Callout slide ── */
-    .slide--callout { text-align: center; }
-    .callout-number {
-      font-size: 72px;
-      font-weight: 800;
-      line-height: 1;
-      margin-bottom: 12px;
-    }
-    .callout-label {
-      font-size: 18px;
-      color: var(--muted);
-      max-width: 540px;
-      margin: 0 auto;
-    }
+/* Callout */
+.slide--callout .big-num{font-size:68px;font-weight:800;line-height:1;margin-bottom:6px;}
+.slide--callout .big-unit{font-size:20px;color:#8892b0;margin-bottom:16px;}
 
-    /* ── Problem / Decision slides ── */
-    .problem-box {
-      border-left: 4px solid #ef4444;
-      background: rgba(239,68,68,.07);
-      border-radius: 0 12px 12px 0;
-      padding: 20px 28px;
-      margin-top: 20px;
-    }
-    .problem-box .label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #ef4444;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      margin-bottom: 8px;
-    }
-    .problem-box p { font-size: 18px; color: #fca5a5; line-height: 1.6; }
+/* Break */
+.break-box{border-left:3px solid #dc2626;background:rgba(220,38,38,.07);border-radius:0 10px 10px 0;padding:16px 20px;margin-top:16px;}
+.break-box p{font-size:17px;color:#fca5a5;line-height:1.65;}
 
-    .decision-box {
-      border-left: 4px solid #16a34a;
-      background: rgba(22,163,74,.08);
-      border-radius: 0 12px 12px 0;
-      padding: 20px 28px;
-      margin-top: 20px;
-    }
-    .decision-box .label {
-      font-size: 11px;
-      font-weight: 700;
-      color: #16a34a;
-      text-transform: uppercase;
-      letter-spacing: .1em;
-      margin-bottom: 8px;
-    }
-    .decision-box p { font-size: 17px; color: #86efac; line-height: 1.6; }
+/* Decision */
+.why-nots{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0;}
+.why-pill{background:#1a0d06;border:1px solid #4a2010;border-radius:6px;padding:5px 12px;font-size:12px;color:#fdba74;}
+.why-pill span{color:#6b3010;margin-right:4px;}
+.dec-box{border-left:3px solid #16a34a;background:rgba(22,163,74,.07);border-radius:0 10px 10px 0;padding:16px 20px;margin-top:4px;}
+.dec-box p{font-size:16px;color:#86efac;line-height:1.65;}
 
-    /* ── Bullets ── */
-    .bullets { list-style: none; padding: 0; margin-top: 16px; }
-    .bullets li {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      font-size: 17px;
-      color: var(--muted);
-      margin-bottom: 14px;
-      line-height: 1.5;
-    }
-    .bullets li::before {
-      content: '';
-      width: 6px; height: 6px;
-      border-radius: 50%;
-      background: currentColor;
-      flex-shrink: 0;
-      margin-top: 9px;
-    }
-    .bullets li strong { color: var(--text); }
-    .bullets.numbered { counter-reset: bul; }
-    .bullets.numbered li::before {
-      content: counter(bul);
-      counter-increment: bul;
-      background: none;
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      font-size: 12px;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px solid var(--border);
-      color: var(--muted);
-      margin-top: 0;
-      flex-shrink: 0;
-    }
+/* Insight (2-col bad/good) */
+.insight-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+.ins-col{border-radius:10px;padding:16px 18px;}
+.ins-col.bad{background:#140806;border:1px solid #3a1010;}
+.ins-col.good{background:#081408;border:1px solid #103a10;}
+.ins-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+.ins-col.bad .ins-head{color:#ef4444;}
+.ins-col.good .ins-head{color:#16a34a;}
+.ins-col p{font-size:14px;line-height:1.6;color:#8892b0;}
+.ins-col p strong{color:#e2e8f0;}
 
-    /* ── Options (no/maybe/yes) ── */
-    .options { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
-    .opt {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      padding: 14px 18px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-    }
-    .opt.no  { border-color: #450a0a; background: rgba(220,38,38,.06); }
-    .opt.ok  { border-color: #1c3020; background: rgba(22,163,74,.05); }
-    .opt.yes { border-color: #1e1060; background: rgba(99,102,241,.08); }
-    .opt-pill {
-      font-size: 10px;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 3px 9px;
-      border-radius: 4px;
-      white-space: nowrap;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-    .no  .opt-pill { background: #450a0a; color: #fca5a5; }
-    .ok  .opt-pill { background: #14532d; color: #86efac; }
-    .yes .opt-pill { background: #2e1065; color: #c4b5fd; }
-    .opt-body { font-size: 15px; color: var(--muted); line-height: 1.5; }
-    .opt-body strong { color: var(--text); }
+/* Bullets (requirements, API) */
+.item-list{margin-top:14px;display:flex;flex-direction:column;gap:10px;}
+.item-row{display:flex;gap:12px;align-items:flex-start;}
+.item-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:3px 9px;border-radius:5px;background:#1e2a3a;color:#7dd3fc;white-space:nowrap;margin-top:2px;flex-shrink:0;}
+.item-text{font-size:15px;color:#8892b0;line-height:1.5;}
+.item-text strong{color:#e2e8f0;}
 
-    /* ── Two columns ── */
-    .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
-    .col-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 20px;
-    }
-    .col-card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 10px; }
-    .col-card p { font-size: 15px; color: var(--muted); line-height: 1.5; }
-    .col-card p strong { color: var(--text); }
-    .col-card ul { font-size: 15px; padding-left: 18px; color: var(--muted); }
-    .col-card li { margin-bottom: 6px; }
+/* Agenda */
+.agenda-list{margin-top:18px;display:flex;flex-direction:column;gap:12px;}
+.ag-row{display:flex;gap:14px;align-items:flex-start;}
+.ag-num{font-size:24px;font-weight:800;line-height:1;flex-shrink:0;width:36px;}
+.ag-text{font-size:16px;color:#8892b0;padding-top:4px;line-height:1.4;}
 
-    /* ── Code block ── */
-    .code-block {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px 22px;
-      font-family: 'Cascadia Code', 'Fira Code', monospace;
-      font-size: 14.5px;
-      color: #7dd3fc;
-      line-height: 1.7;
-      margin-top: 16px;
-      overflow-x: auto;
-      white-space: pre;
-    }
-    .code-note {
-      margin-top: 12px;
-      font-size: 14px;
-      color: var(--muted);
-    }
+/* Code */
+.code-block{background:#0f1420;border:1px solid #1e2540;border-radius:10px;padding:18px 20px;font-family:'Cascadia Code','Fira Code',monospace;font-size:13px;color:#7dd3fc;line-height:1.75;margin-top:14px;white-space:pre;}
 
-    /* ── Table ── */
-    .data-table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 15px; }
-    .data-table th { padding: 9px 14px; background: var(--surface); color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; text-align: left; }
-    .data-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); color: var(--text); line-height: 1.4; }
-    .data-table tr:last-child td { border: none; }
-    .data-table td:first-child { color: #7dd3fc; font-weight: 600; }
+/* Table */
+.data-tbl{width:100%;border-collapse:collapse;margin-top:14px;font-size:14px;}
+.data-tbl th{padding:8px 12px;background:#0f1420;color:#3a4468;font-size:10px;text-transform:uppercase;letter-spacing:.06em;text-align:left;}
+.data-tbl td{padding:10px 12px;border-bottom:1px solid #1a1f2e;line-height:1.4;}
+.data-tbl tr:last-child td{border:none;}
+.data-tbl td:first-child{color:#7dd3fc;font-weight:600;font-size:13px;}
+.data-tbl td:last-child{color:#6b7594;font-size:13px;}
 
-    /* ── Observe callout ── */
-    .observe {
-      border-left: 3px solid #00b4d8;
-      background: rgba(0,180,216,.07);
-      border-radius: 0 8px 8px 0;
-      padding: 12px 18px;
-      margin-top: 16px;
-      font-size: 16px;
-      color: var(--muted);
-    }
-    .observe strong { color: #38bdf8; }
-    .observe.warn { border-color: #d97706; background: rgba(217,119,6,.07); }
-    .observe.warn strong { color: #fbbf24; }
+/* Failures */
+.fail-list{margin-top:14px;display:flex;flex-direction:column;gap:8px;}
+.fail-row{display:flex;gap:12px;padding:12px 16px;border-radius:8px;border:1px solid #16a34a30;background:#081408;}
+.fail-check{color:#16a34a;font-size:16px;flex-shrink:0;padding-top:1px;}
+.fail-scenario{font-size:13px;font-weight:600;color:#c3cfe2;margin-bottom:3px;}
+.fail-result{font-size:13px;color:#6b7594;line-height:1.4;}
 
-    /* ── Diagram ── */
-    .diagram-wrap {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      margin-top: 16px;
-      display: flex;
-      justify-content: center;
-      overflow: hidden;
-    }
-    .diagram-wrap .mermaid { max-width: 100%; }
-    svg[id^="mermaid"] { max-width: 100%; }
+/* Closing */
+.closing-wrap{width:100%;max-width:800px;margin:0 auto;padding:60px;}
+.closing-grid{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:center;}
+.closing-before{opacity:.5;}
+.closing-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#3a4468;margin-bottom:16px;}
+.closing-items{margin-top:40px;display:flex;flex-direction:column;gap:20px;}
+.closing-item{display:flex;gap:16px;align-items:flex-start;}
+.closing-n{font-size:28px;font-weight:800;line-height:1;flex-shrink:0;width:38px;}
+.closing-text strong{display:block;font-size:17px;color:#e2e8f0;margin-bottom:3px;}
+.closing-text span{font-size:14px;color:#6b7594;}
 
-    /* ── Chapter divider ── */
-    .slide--chapter { text-align: center; }
-    .chapter-num {
-      font-size: 13px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: .12em;
-      margin-bottom: 20px;
-    }
-    .slide--chapter .slide-title { font-size: 44px; }
-
-    /* ── Closing ── */
-    .closing-item {
-      display: flex;
-      gap: 16px;
-      align-items: flex-start;
-      margin-bottom: 20px;
-    }
-    .closing-num {
-      font-size: 28px;
-      font-weight: 800;
-      line-height: 1;
-      flex-shrink: 0;
-      width: 40px;
-    }
-    .closing-text strong { display: block; font-size: 18px; color: var(--text); margin-bottom: 4px; }
-    .closing-text span { font-size: 15px; color: var(--muted); }
-  </style>
+/* Animations */
+@keyframes pulse-red{0%,100%{opacity:1;}50%{opacity:.5;}}
+</style>
 </head>
 <body>
 
-<!-- Chrome -->
 <div id="chrome">
-  <div id="chapter-dot"></div>
-  <span id="chapter-name"></span>
-  <span id="slide-counter"></span>
-  <span id="nav-hint">Enter / → next &nbsp;·&nbsp; ← / Shift+Tab previous &nbsp;·&nbsp; click to advance</span>
-  <a href="hld.html" class="chrome-link">Full HLD</a>
-  <a href="mindmap.html" class="chrome-link">Mind Map</a>
+  <div id="act-dot"></div>
+  <span id="act-label"></span>
+  <span id="slide-num"></span>
+  <span id="nav-hint">Enter / → next &nbsp;·&nbsp; ← / Shift+Tab back &nbsp;·&nbsp; click to advance</span>
+  <a href="hld.html" class="chrome-btn">Full HLD</a>
 </div>
 
-<div id="stage"></div>
+<div id="stage">
+  <div id="content-panel"><div id="slide-mount"></div></div>
+  <div id="map-panel">
+    <div class="map-title">Architecture — current state</div>
+    <svg id="map-svg" viewBox="0 0 312 174" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="map-legend">
+      <div class="leg-row"><div class="leg-dot" style="background:#1e2540"></div>not yet introduced</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#374162"></div>in the system</div>
+      <div class="leg-row" id="leg-active"><div class="leg-dot" style="background:#00b4d8"></div>focus of this slide</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#dc2626"></div>breaking point</div>
+    </div>
+  </div>
+</div>
 <div id="progress"></div>
 
 <script>
-// ── CHAPTER DEFINITIONS ──────────────────────────────────────────────────────
-const CHAPTERS = [
-  { name: "The Problem Space",    color: "#00b4d8" },
-  { name: "Naive Design",         color: "#f59e0b" },
-  { name: "Location at Scale",    color: "#ef4444" },
-  { name: "Finding a Driver",     color: "#8b5cf6" },
-  { name: "No Double Assignment", color: "#f97316" },
-  { name: "Resilient Workflow",   color: "#06b6d4" },
-  { name: "Real-time Updates",    color: "#16a34a" },
-  { name: "API Design",           color: "#00b4d8" },
-  { name: "The Complete Picture", color: "#00b4d8" },
+// ── MAP NODE DEFINITIONS ──────────────────────────────────────────────────────
+const N = {
+  rider:      {x:2,   y:34,  w:52, h:20, label:"Rider"},
+  driver:     {x:2,   y:62,  w:52, h:20, label:"Driver"},
+  server_n:   {x:70,  y:48,  w:56, h:20, label:"API Server"},
+  db_n:       {x:144, y:48,  w:56, h:20, label:"Database"},
+  gateway:    {x:70,  y:48,  w:60, h:20, label:"Gateway"},
+  location:   {x:148, y:4,   w:70, h:20, label:"Location Svc"},
+  dispatch:   {x:148, y:32,  w:70, h:20, label:"Dispatch Svc"},
+  trip:       {x:148, y:60,  w:70, h:20, label:"Trip Svc"},
+  fare:       {x:148, y:88,  w:70, h:20, label:"Fare Svc"},
+  ringpop:    {x:148, y:116, w:70, h:20, label:"Ringpop"},
+  redis_geo:  {x:230, y:4,   w:78, h:20, label:"Redis Geo"},
+  redis_lock: {x:230, y:32,  w:78, h:20, label:"Redis Lock"},
+  kafka:      {x:230, y:60,  w:78, h:20, label:"Kafka"},
+  postgres:   {x:230, y:88,  w:78, h:20, label:"PostgreSQL"},
+  cassandra:  {x:230, y:116, w:78, h:20, label:"Cassandra"},
+  temporal:   {x:230, y:144, w:78, h:20, label:"Temporal"},
+};
+
+const CONNS = [
+  ['rider','server_n'],['driver','server_n'],['server_n','db_n'],
+  ['rider','gateway'],['driver','gateway'],
+  ['gateway','location'],['gateway','dispatch'],['gateway','trip'],['gateway','fare'],
+  ['location','redis_geo'],['location','kafka'],
+  ['dispatch','redis_geo'],['dispatch','redis_lock'],['dispatch','ringpop'],
+  ['kafka','cassandra'],
+  ['trip','postgres'],['trip','temporal'],
 ];
 
-// ── SLIDE DATA ───────────────────────────────────────────────────────────────
+const PROD_NODES = ['gateway','location','dispatch','trip','fare','ringpop','redis_geo','redis_lock','kafka','postgres','cassandra','temporal'];
+const NAIVE_NODES = ['server_n','db_n'];
+
+// ── BUILD MAP SVG ─────────────────────────────────────────────────────────────
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs={}) {
+  const el = document.createElementNS(SVG_NS, tag);
+  Object.entries(attrs).forEach(([k,v]) => el.setAttribute(k, v));
+  return el;
+}
+
+(function buildMap() {
+  const svg = document.getElementById('map-svg');
+
+  // Glow filters
+  const defs = svgEl('defs');
+  defs.innerHTML = `
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-red" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>`;
+  svg.appendChild(defs);
+
+  // Connection lines
+  const cg = svgEl('g', {id:'conns'});
+  CONNS.forEach(([a,b]) => {
+    const na = N[a], nb = N[b];
+    if (!na || !nb) return;
+    const line = svgEl('line', {
+      id:`c-${a}-${b}`,
+      x1: na.x + na.w, y1: na.y + na.h/2,
+      x2: nb.x,        y2: nb.y + nb.h/2,
+      stroke:'#1e2540', 'stroke-width':'1',
+    });
+    line.style.transition = 'stroke .5s, opacity .5s';
+    line.style.opacity = '0';
+    cg.appendChild(line);
+  });
+  svg.appendChild(cg);
+
+  // Node groups
+  const ng = svgEl('g', {id:'nodes'});
+  Object.entries(N).forEach(([id, n]) => {
+    const g = svgEl('g', {id:`nd-${id}`});
+    const rect = svgEl('rect', {id:`nd-${id}-r`, x:n.x, y:n.y, width:n.w, height:n.h, rx:'5'});
+    rect.style.transition = 'fill .45s, stroke .45s, filter .45s';
+    const txt = svgEl('text', {
+      id:`nd-${id}-t`, x:n.x+n.w/2, y:n.y+n.h/2,
+      'text-anchor':'middle', 'dominant-baseline':'central',
+      'font-size':'7.2', 'font-family':'Segoe UI,system-ui,sans-serif', 'font-weight':'500'
+    });
+    txt.style.transition = 'fill .45s';
+    txt.textContent = n.label;
+    g.appendChild(rect);
+    g.appendChild(txt);
+    ng.appendChild(g);
+  });
+  svg.appendChild(ng);
+
+  // Set everything to ghost initially
+  Object.keys(N).forEach(id => setNode(id, 'ghost'));
+})();
+
+function setNode(id, state, color) {
+  const r = document.getElementById(`nd-${id}-r`);
+  const t = document.getElementById(`nd-${id}-t`);
+  if (!r || !t) return;
+  if (state === 'ghost') {
+    r.style.fill='#0d1017'; r.style.stroke='#161c2a'; r.style.filter='none';
+    t.style.fill='#1e2540';
+  } else if (state === 'visible') {
+    r.style.fill='#141c2a'; r.style.stroke='#2a3358'; r.style.filter='none';
+    t.style.fill='#5a6494';
+  } else if (state === 'active') {
+    const c = color||'#00b4d8';
+    r.style.fill=hexA(c,.12); r.style.stroke=c; r.style.filter='url(#glow)';
+    t.style.fill=c;
+  } else if (state === 'broken') {
+    r.style.fill='#1a0606'; r.style.stroke='#dc2626'; r.style.filter='url(#glow-red)';
+    t.style.fill='#f87171';
+  }
+}
+
+function hexA(hex, a) {
+  const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function updateMap(state) {
+  const show = new Set(state.show||[]);
+  const broken = new Set(state.broken||[]);
+
+  Object.keys(N).forEach(id => {
+    if (broken.has(id))       setNode(id,'broken');
+    else if (id===state.active) setNode(id,'active',state.activeColor||'#00b4d8');
+    else if (show.has(id))    setNode(id,'visible');
+    else                      setNode(id,'ghost');
+  });
+
+  // Update connection lines
+  CONNS.forEach(([a,b]) => {
+    const line = document.getElementById(`c-${a}-${b}`);
+    if (!line) return;
+    const aVis = show.has(a)||broken.has(a)||a===state.active;
+    const bVis = show.has(b)||broken.has(b)||b===state.active;
+    if (aVis && bVis) {
+      line.style.opacity = '0.5';
+      if (broken.has(b)||broken.has(a)) line.setAttribute('stroke','#3a1010');
+      else if (b===state.active||a===state.active) line.setAttribute('stroke', hexA(state.activeColor||'#00b4d8',.5));
+      else line.setAttribute('stroke','#252a44');
+    } else {
+      line.style.opacity = '0';
+    }
+  });
+}
+
+// ── SLIDE DATA ────────────────────────────────────────────────────────────────
+const ALL = ['rider','driver','gateway','location','dispatch','trip','fare','ringpop','redis_geo','redis_lock','kafka','postgres','cassandra','temporal'];
+const NAIVE = ['rider','driver','server_n','db_n'];
+const BROKEN_ALL = ['rider','driver','server_n','db_n'];
+
 const SLIDES = [
-
-  // ── Chapter 1: Problem Space ─────────────────────────────────────────────
+  // ── ACT 1: THE BET ───────────────────────────────────────────────────────
   {
-    ch: 0, type: "title",
-    title: "Designing Uber",
-    subtitle: "Every component earned, not assumed",
-    note: "A problem-driven system design walkthrough · 35 slides",
+    act:'',actColor:'#00b4d8',full:true,
+    map:{show:[],active:null,broken:[]},
+    html:`<div class="slide slide--title">
+      <div class="s-act" style="color:#00b4d8">System Design Interview</div>
+      <div class="s-title">Designing Uber</div>
+      <div class="s-sub">Every component earned through a problem.<br>Not one assumed upfront.</div>
+      <div class="s-note" style="margin-top:32px">Enter / → to advance &nbsp;·&nbsp; ← to go back &nbsp;·&nbsp; click right side to advance</div>
+    </div>`
   },
   {
-    ch: 0, type: "content",
-    title: "What Are We Building?",
-    bullets: [
-      ["Rider requests a ride — picks pickup + dropoff, sees fare + ETA, tracks driver, can cancel"],
-      ["Driver goes online, accepts or rejects offers, streams GPS every ~5 seconds"],
-      ["Non-functional: match in <strong>&lt;1 second</strong>, 99.99% uptime, <strong>no double driver assignment</strong>"],
-      ["Out of scope today: payments, surge algorithm, maps engine, driver KYC"],
-    ],
-    note: "Agree on scope before drawing anything. Calling out what's out of scope is a signal of maturity.",
+    act:'The Stakes',actColor:'#00b4d8',
+    map:{show:['rider','driver'],active:null,broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#00b4d8">The Stakes</div>
+      <div class="s-title">Two users. One contract.</div>
+      <div class="item-list">
+        <div class="item-row"><span class="item-label">Rider</span><span class="item-text">Request a ride, see fare + ETA before confirming, track driver, cancel.</span></div>
+        <div class="item-row"><span class="item-label">Driver</span><span class="item-text">Go online/offline, accept or reject ride offers, stream GPS every ~5s.</span></div>
+        <div class="item-row"><span class="item-label">System</span><span class="item-text">Match in <strong>&lt;1 second</strong> · 99.99% uptime · <strong>one driver per rider, always</strong>.</span></div>
+        <div class="item-row"><span class="item-label" style="background:#1f0808;color:#f87171">Out of scope</span><span class="item-text">Payments, surge algorithm, maps engine, driver KYC.</span></div>
+      </div>
+    </div>`
   },
   {
-    ch: 0, type: "callout",
-    title: "The Number That Drives Everything",
-    big: "1,000,000",
-    unit: "writes / second",
-    body: "5M active drivers × 1 location update every 5 seconds.<br>Almost every architecture decision below traces back to this single constraint.",
-    color: "#ef4444",
-  },
-  {
-    ch: 0, type: "content",
-    title: "Capacity At a Glance",
-    bullets: [
-      ["<strong>10M trips/day</strong> → ~350/sec peak — manageable for a relational DB"],
-      ["<strong>5M active drivers online</strong> — their location is the hard problem"],
-      ["<strong>1M location writes/sec</strong> ← rules out any traditional DB on the hot path"],
-      ["Live driver index: <strong>5M × 100 bytes ≈ 500 MB</strong> — fits entirely in RAM"],
-      ["<strong>315K concurrent trips at peak</strong> — each needs live location pushes"],
-    ],
+    act:'The Stakes',actColor:'#ef4444',
+    map:{show:['rider','driver'],active:null,broken:[]},
+    html:`<div class="slide slide--callout">
+      <div class="s-act" style="color:#ef4444">The Constraint That Shapes Everything</div>
+      <div class="big-num" style="color:#ef4444">1,000,000</div>
+      <div class="big-unit">location writes / second</div>
+      <div class="s-sub" style="max-width:480px">5M active drivers × one GPS ping every 5 seconds.</div>
+      <div class="s-sub" style="max-width:480px;margin-top:8px">Almost every architecture decision below traces back to this single number.</div>
+    </div>`
   },
 
-  // ── Chapter 2: Naive Design ───────────────────────────────────────────────
+  // ── ACT 2: THE NAIVE DESIGN BREAKS ───────────────────────────────────────
   {
-    ch: 1, type: "diagram",
-    title: "Start Simple",
-    subtitle: "Rider + Driver apps → API server → Database. Where does this break?",
-    mermaid: `flowchart LR
-    RA["Rider App"] --> API["API Server"]
-    DA["Driver App"] --> API
-    API --> DB[("Database")]`,
+    act:'Naive Design',actColor:'#f59e0b',
+    map:{show:['rider','driver','server_n','db_n'],active:null,broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#f59e0b">Naive Design</div>
+      <div class="s-title">Start with the simplest thing.</div>
+      <div class="s-sub" style="margin-top:8px">Rider + Driver apps talk to one API server. Drivers POST location every 5s. Server queries the database for nearby drivers and assigns one.</div>
+      <div class="s-sub" style="margin-top:16px;color:#3a4468">This is a valid starting point. Now let's find where it breaks.</div>
+      <div class="s-note">Watch the map on the right — it shows the current system state.</div>
+    </div>`
   },
   {
-    ch: 1, type: "problem",
-    title: "Break #1 — The Database Dies",
-    problem: "5M drivers × 1 update / 5s = <strong>1M writes/sec into our database.</strong><br>PostgreSQL handles ~10K writes/sec. We are <strong>100× over the limit</strong> before a single rider has booked anything.",
+    act:'Break #1',actColor:'#ef4444',
+    map:{show:NAIVE,active:null,broken:['db_n']},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#ef4444">Break #1</div>
+      <div class="s-title">The database can't keep up.</div>
+      <div class="break-box"><p>5M drivers × 1 update/5s = <strong>1,000,000 writes/sec</strong>.<br>PostgreSQL handles ~10K. We are <strong>100× over the limit</strong> before a single rider has booked anything.<br><br>DynamoDB on-demand at this volume: $200K+/day in write capacity alone.</p></div>
+      <div class="s-note">Database highlighted red on the map.</div>
+    </div>`
   },
   {
-    ch: 1, type: "problem",
-    title: "Break #2 — Proximity Queries Are Slow",
-    problem: "\"Find drivers within 5km\" on 5 million rows without spatial indexing is a <strong>full table scan</strong>.<br>Re-indexing during a 1M/s write storm makes it worse, not better.",
+    act:'Break #2',actColor:'#ef4444',
+    map:{show:NAIVE,active:null,broken:['db_n']},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#ef4444">Break #2</div>
+      <div class="s-title">Proximity queries are too slow.</div>
+      <div class="break-box"><p>"Find drivers within 5km" on 5M rows without spatial indexing is a <strong>full table scan</strong>.<br><br>Add a spatial index — now <strong>re-indexing under a 1M writes/sec write storm</strong> degrades the entire database.</p></div>
+    </div>`
   },
   {
-    ch: 1, type: "problem",
-    title: "Break #3 — Two Servers, Same Driver",
-    problem: "Two API server instances simultaneously select the <strong>same available driver</strong> for two different riders.<br>Without coordination, one rider's driver simply never arrives.",
+    act:'Break #3',actColor:'#ef4444',
+    map:{show:NAIVE,active:null,broken:['server_n','db_n']},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#ef4444">Break #3</div>
+      <div class="s-title">Two servers. Same driver.</div>
+      <div class="break-box"><p>We run multiple API instances for scale. Two instances simultaneously select the <strong>same available driver</strong> for two different riders.<br><br>Without coordination, one rider's driver simply never shows up.</p></div>
+    </div>`
   },
   {
-    ch: 1, type: "problem",
-    title: "Break #4 — Polling Is Expensive",
-    problem: "Riders poll \"where's my driver?\" every 5s during trips.<br><strong>315K trips × 12 req/min = 3.8M requests/min</strong><br>of mostly empty responses.",
+    act:'Break #4',actColor:'#ef4444',
+    map:{show:NAIVE,active:null,broken:BROKEN_ALL},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#ef4444">Break #4</div>
+      <div class="s-title">Polling buries the server.</div>
+      <div class="break-box"><p>Riders poll "where's my driver?" every 5s during trips.<br><strong>315K concurrent trips × 12 req/min = 3.8M requests/min</strong> of mostly empty responses.<br><br>Every round-trip is wasted server capacity.</p></div>
+    </div>`
   },
   {
-    ch: 1, type: "content",
-    title: "Our Design Agenda",
-    subtitle: "Four problems, solved in order.",
-    bullets_numbered: [
-      "How do we handle <strong>1M location writes/sec</strong>?",
-      "How do we find the <strong>best available driver</strong> nearby in &lt;100ms?",
-      "How do we guarantee <strong>one driver per rider</strong> — no race conditions?",
-      "How do riders <strong>track the driver</strong> without polling?",
-    ],
-    note: "Stating the design agenda out loud in an interview shows structure. The interviewer knows you won't miss anything.",
-  },
-
-  // ── Chapter 3: Location at Scale ─────────────────────────────────────────
-  {
-    ch: 2, type: "chapter",
-    chNum: "Problem 1",
-    title: "Location at Scale",
-    subtitle: "How do we store and query 5M driver locations, updated every 5 seconds?",
-  },
-  {
-    ch: 2, type: "options",
-    title: "Option Space: 1M Writes/Sec",
-    options: [
-      { kind: "no",   pill: "Fails",   head: "Write directly to PostgreSQL / DynamoDB",  body: "PG handles ~10K writes/sec. DynamoDB at 1M writes/sec costs $200K+/day. Proximity queries on a live 5M-row table are slow and degrade under write pressure." },
-      { kind: "ok",   pill: "Partial", head: "Batch writes + PostGIS spatial index",     body: "Aggregates over 5–10s windows, then batch-insert. PostGIS gives O(log n) proximity queries. Throughput solved. <strong>Problem:</strong> driver position lags reality by the batch window — ETA accuracy degrades." },
-      { kind: "yes",  pill: "Decision", head: "Redis Geo as the live index",             body: "<code>GEOADD</code> encodes lat/lng as a 52-bit integer, <strong>overwrites the previous position</strong> — no stale accumulation. <code>GEOSEARCH</code> returns nearest 10 drivers in sub-millisecond. All 5M fit in ~500 MB RAM." },
-    ],
-  },
-  {
-    ch: 2, type: "decision",
-    title: "Decision: Redis Geo",
-    decision: "<code>GEOADD geo:drivers:nyc lat lng driver_id</code><br>In-memory · GEOADD overwrites · sub-ms query · repopulates in 5s on restart.",
-    note: "Repopulates because drivers keep pinging. No special recovery logic needed.",
-  },
-  {
-    ch: 2, type: "options",
-    title: "New Problem: Redis Is Ephemeral",
-    subtitle: "We need durable location history for billing disputes and trip reconstruction.",
-    options: [
-      { kind: "no",  pill: "Fails",    head: "Synchronous write to Redis + DB on every ping",  body: "Couples ingestion latency to two systems. If the DB write is slow, the pipeline backs up. 1M writes/sec will surface the slowest link." },
-      { kind: "yes", pill: "Decision", head: "Redis (live) + Kafka → Cassandra (history)",     body: "Location Service writes to Redis synchronously, publishes to Kafka fire-and-forget. A separate Cassandra consumer appends to the log. Ingestion path never blocked by history write." },
-    ],
-    note: "Why Cassandra: append-only time-series, LSM-tree optimized for write throughput, horizontal scale by adding nodes.",
-  },
-  {
-    ch: 2, type: "options",
-    title: "One Global Redis or Per-City?",
-    options: [
-      { kind: "no",  pill: "Risky",    head: "One global Redis cluster",  body: "A NYC surge slows queries for São Paulo. A failure takes down matching worldwide. Violates data residency regulations." },
-      { kind: "yes", pill: "Decision", head: "Geo-shard by city",         body: "<code>geo:drivers:nyc</code>, <code>geo:drivers:sf</code>. Kafka topics also per city. Failure blast radius contained. Regulatory requirements met naturally." },
-    ],
+    act:'Design Agenda',actColor:'#f59e0b',
+    map:{show:NAIVE,active:null,broken:BROKEN_ALL},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#f59e0b">Design Agenda</div>
+      <div class="s-title">Four breaks. Four fixes.</div>
+      <div class="agenda-list">
+        <div class="ag-row"><div class="ag-num" style="color:#ef4444">01</div><div class="ag-text">1M location writes/sec — the database can't handle it</div></div>
+        <div class="ag-row"><div class="ag-num" style="color:#8b5cf6">02</div><div class="ag-text">Finding the best driver nearby in under 100ms</div></div>
+        <div class="ag-row"><div class="ag-num" style="color:#f97316">03</div><div class="ag-text">One driver, one rider — no race condition</div></div>
+        <div class="ag-row"><div class="ag-num" style="color:#16a34a">04</div><div class="ag-text">Real-time tracking without 3.8M empty polls/min</div></div>
+      </div>
+      <div class="s-note">Stating the agenda in an interview shows structure. The interviewer knows you won't miss anything.</div>
+    </div>`
   },
 
-  // ── Chapter 4: Finding a Driver ───────────────────────────────────────────
+  // ── ACT 3: FIX IT PIECE BY PIECE ─────────────────────────────────────────
   {
-    ch: 3, type: "chapter",
-    chNum: "Problem 2",
-    title: "Finding the Right Driver",
-    subtitle: "Given a pickup and 5M drivers, who do we offer the ride to first?",
+    act:'Fix #1 — Location',actColor:'#ef4444',
+    map:{show:['rider','driver','gateway','location','redis_geo'],active:'redis_geo',activeColor:'#ef4444',broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#ef4444">Fix #1 — Location at Scale</div>
+      <div class="s-title">Redis Geo as the live driver index.</div>
+      <div class="why-nots">
+        <div class="why-pill"><span>✕</span>Not DB — 100× write limit, $200K+/day</div>
+        <div class="why-pill"><span>✕</span>Not Batch+PostGIS — lags reality, ETAs degrade</div>
+      </div>
+      <div class="dec-box"><p><code style="background:#0f1420;color:#7dd3fc;padding:2px 6px;border-radius:3px">GEOADD geo:drivers:nyc lat lng driver_id</code><br><br>O(log n) write. <strong>Overwrites the previous position</strong> — no stale accumulation. Sub-ms proximity query via GEOSEARCH. 5M entries fit in ~500 MB RAM. If Redis restarts, driver pings repopulate it in 5 seconds.</p></div>
+    </div>`
   },
   {
-    ch: 3, type: "options",
-    title: "Spatial Indexing: Geohash vs H3",
-    options: [
-      { kind: "ok",  pill: "Geohash", head: "Base-32 string encoding — easy prefix lookup",  body: "Rectangular cells. Diagonal neighbors are <strong>√2× farther</strong> than edge neighbors. Inconsistent proximity near cell boundaries. Simple to implement and debug." },
-      { kind: "ok",  pill: "S2",      head: "Google's hierarchical 64-bit cell IDs",          body: "Cube-projected sphere. Better than geohash. <strong>Problem:</strong> square cells still have the diagonal-vs-edge distance issue. Non-uniform cell area." },
-      { kind: "yes", pill: "H3",      head: "Uber's hexagonal grid — equidistant neighbors",  body: "All 6 neighboring hexagon centers are the same distance from the current cell center. <strong>No direction is privileged.</strong> Level 9 ≈ 175m. Query cell + 6 neighbors: 5M drivers → hundreds of candidates." },
-    ],
-    note: "H3 is Uber's production choice for dispatch.",
+    act:'Fix #1 — Location',actColor:'#ef4444',
+    map:{show:['rider','driver','gateway','location','redis_geo','kafka','cassandra'],active:'kafka',activeColor:'#ef4444',broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#ef4444">Fix #1 — Location at Scale</div>
+      <div class="s-title">Redis is fast but ephemeral.<br>History needs a durable log.</div>
+      <div class="why-nots">
+        <div class="why-pill"><span>✕</span>Not sync-write to both — couples ingestion to DB latency at 1M/s</div>
+      </div>
+      <div class="dec-box"><p>Location Service → <strong>Redis</strong> (synchronous, fast) + <strong>Kafka</strong> (fire-and-forget).<br>A Cassandra consumer reads from Kafka and appends to the location log.<br><br><strong>Why Cassandra:</strong> append-only, time-series partitioned by driver_id, LSM-tree built for write throughput. Horizontal scale by adding nodes, no re-sharding.</p></div>
+    </div>`
   },
   {
-    ch: 3, type: "content",
-    title: "Why Hexagons?",
-    subtitle: "With square cells, diagonal neighbors are √2 (≈1.41×) farther than edge neighbors.",
-    observe: { warn: false, text: "With H3 hexagons, every neighbor center is <strong>exactly the same distance</strong> from the current cell center. Proximity is consistent in all 6 directions. No cell boundary artifacts." },
-    bullets: [
-      ["Query pickup H3 cell + 6 neighbors → candidate set shrinks from 5M to <strong>hundreds</strong>"],
-      ["ETA computation (expensive) only runs on those hundreds, not millions"],
-    ],
+    act:'Fix #1 — Location',actColor:'#ef4444',
+    map:{show:['rider','driver','gateway','location','redis_geo','kafka','cassandra'],active:'redis_geo',activeColor:'#ef4444',broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#ef4444">Fix #1 — Location at Scale</div>
+      <div class="s-title">One global Redis or sharded by city?</div>
+      <div class="insight-cols">
+        <div class="ins-col bad"><div class="ins-head">✕ Global cluster</div><p>A NYC surge slows São Paulo queries. A crash takes down matching <strong>worldwide</strong>. Violates data residency regulations in many regions.</p></div>
+        <div class="ins-col good"><div class="ins-head">✓ Shard by city</div><p><strong>geo:drivers:nyc</strong>, <strong>geo:drivers:sf</strong>. Kafka topics also per city. Failure blast radius contained to one region. Compliance met naturally.</p></div>
+      </div>
+    </div>`
   },
   {
-    ch: 3, type: "content",
-    title: "Scoring Candidates",
-    observe: { warn: true, text: "A driver 800m away across a river: 12 minutes. One 1.2km away on the same street: 4 minutes. <strong>Straight-line distance is meaningless in a city. Rank by road-network ETA.</strong>" },
-    bullets: [
-      ["<strong>Road-network ETA</strong> — modified Dijkstra + contraction hierarchies, &lt;50ms per query"],
-      ["<strong>Driver rating</strong> — quality signal, especially on premium tiers"],
-      ["<strong>Acceptance rate</strong> — skip frequent rejecters to reduce cascade latency"],
-      ["<strong>Vehicle type match</strong> — UberX request shouldn't go to an Uber Black driver"],
-    ],
+    act:'Fix #2 — Finding a Driver',actColor:'#8b5cf6',
+    map:{show:['rider','driver','gateway','location','dispatch','redis_geo','kafka','cassandra'],active:'dispatch',activeColor:'#8b5cf6',broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#8b5cf6">Fix #2 — Finding a Driver</div>
+      <div class="s-title">H3 hexagonal cells for proximity.</div>
+      <div class="why-nots">
+        <div class="why-pill"><span>✕</span>Not Geohash — rectangular cells, diagonal neighbors √2× farther</div>
+        <div class="why-pill"><span>✕</span>Not S2 — better, but square cells still have unequal neighbor distances</div>
+      </div>
+      <div class="dec-box"><p>H3 hexagons — <strong>all 6 neighbors equidistant</strong> from center. No direction is privileged. Level 9 ≈ 175m. Query pickup cell + 6 neighbors: <strong>5M drivers shrinks to hundreds of candidates</strong> before any ETA computation.</p></div>
+    </div>`
   },
   {
-    ch: 3, type: "content",
-    title: "GPS Accuracy Problem",
-    subtitle: "Urban canyon reflections cause 50–100m GPS errors. Drivers appear in rivers and buildings.",
-    options: [
-      { kind: "no",  pill: "Naive",    head: "Use raw GPS directly",                       body: "Wrong positions → wrong ETAs → misrouted drivers. Bad experience at scale." },
-      { kind: "yes", pill: "Decision", head: "Map-matching via Hidden Markov Models",       body: "Snaps GPS to the most probable road segment given the sequence of observations. Plus <strong>predictive positioning</strong>: extrapolate from last heading + speed. 83m staleness at 60 km/h → &lt;10m effective." },
-    ],
+    act:'Fix #2 — Finding a Driver',actColor:'#8b5cf6',
+    map:{show:['rider','driver','gateway','location','dispatch','redis_geo','kafka','cassandra'],active:'dispatch',activeColor:'#8b5cf6',broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#8b5cf6">Fix #2 — Finding a Driver</div>
+      <div class="s-title">Score by road ETA, not distance.</div>
+      <div class="insight-cols">
+        <div class="ins-col bad"><div class="ins-head">✕ Straight-line distance</div><p>Driver 800m away <strong>across a river</strong>: 12 minutes.<br>Ranked #1 by Euclidean distance.</p></div>
+        <div class="ins-col good"><div class="ins-head">✓ Road-network ETA</div><p>Driver 1.2km away on the <strong>same street</strong>: 4 minutes.<br>Modified Dijkstra + contraction hierarchies. &lt;50ms per query.</p></div>
+      </div>
+      <div class="s-note">Secondary signals: driver rating → acceptance rate → vehicle type match.</div>
+    </div>`
   },
+  {
+    act:'Fix #3 — No Double Assignment',actColor:'#f97316',
+    map:{show:['rider','driver','gateway','location','dispatch','redis_geo','redis_lock','kafka','cassandra'],active:'redis_lock',activeColor:'#f97316',broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#f97316">Fix #3 — No Double Assignment</div>
+      <div class="s-title">Redis SETNX. Atomic. Self-cleaning.</div>
+      <div class="why-nots">
+        <div class="why-pill"><span>✕</span>Not in-memory lock — instance B doesn't know about A's lock</div>
+        <div class="why-pill"><span>✕</span>Not DB status CAS — timeout recovery is in-memory, lost on crash</div>
+      </div>
+      <div class="code-block">SET driver:42:lock  1  EX 10  NX
 
-  // ── Chapter 5: No Double Assignment ─────────────────────────────────────
-  {
-    ch: 4, type: "chapter",
-    chNum: "Problem 3",
-    title: "One Driver, One Rider",
-    subtitle: "Two Dispatch instances select the same driver simultaneously. How do we prevent it?",
+NX = only if Not eXists — exactly one caller wins
+EX = auto-expires in 10s — covers crash AND ignore
+On accept → transition to on_trip, keep lock
+On reject → DEL lock, try next candidate</div>
+    </div>`
   },
   {
-    ch: 4, type: "options",
-    title: "Preventing Double Assignment",
-    options: [
-      { kind: "no",  pill: "Fails",    head: "In-memory lock per Dispatch instance",            body: "Instance B has no knowledge of A's lock. Race condition guaranteed across processes. State lost on crash." },
-      { kind: "ok",  pill: "Better",   head: "DB compare-and-swap on driver status",            body: "<code>available → outstanding_request</code> — atomic, one winner. <strong>Problem:</strong> timeout recovery is in-memory. On crash, the driver stays stuck in <code>outstanding_request</code> forever." },
-      { kind: "yes", pill: "Decision", head: "Redis SETNX with TTL",                           body: "<code>SET driver:42:lock 1 EX 10 NX</code> — atomic, exactly one caller wins, <strong>auto-expires in 10s</strong> whether the service crashes or the driver ignores the offer. No manual cleanup." },
-    ],
-  },
-  {
-    ch: 4, type: "code",
-    title: "The Redis Lock",
-    code: `SET driver:42:lock 1  EX 10  NX
-
--- NX  = only set if Not eXists — exactly one caller wins
--- EX  = auto-expire in 10 seconds — no manual cleanup
--- One atomic command — no race between check and set
-
--- On driver ACCEPT:  transition to on_trip, keep lock
--- On driver REJECT:  DEL driver:42:lock, try next candidate
--- On service CRASH:  lock expires automatically in ≤10s`,
-    note: "Multiple Dispatch instances race safely. Exactly one wins. The TTL is the retry window — driver must respond within 10s.",
-  },
-
-  // ── Chapter 6: Resilient Workflow ────────────────────────────────────────
-  {
-    ch: 5, type: "chapter",
-    chNum: "Problem 4",
-    title: "Resilient Workflow",
-    subtitle: "The matching cascade is: lock → offer → wait 10s → retry. What if the service crashes?",
-  },
-  {
-    ch: 5, type: "options",
-    title: "Surviving a Crash Mid-Workflow",
-    options: [
-      { kind: "no",  pill: "Fails",    head: "in-memory setTimeout",           body: "Timer state gone on restart. Rider stranded with no driver being tried." },
-      { kind: "ok",  pill: "Better",   head: "Kafka delayed message",          body: "More durable. But Kafka has no native per-message delay — requires a separate delay service. Complex, fragile, non-obvious semantics." },
-      { kind: "yes", pill: "Decision", head: "Temporal durable workflow",      body: "State persisted to durable storage. On crash, replays from the last checkpoint. Built-in sleep and timeout primitives model the 10s wait naturally. Activities are retried automatically." },
-    ],
-  },
-  {
-    ch: 5, type: "code",
-    title: "The Temporal Workflow",
-    code: `workflow MatchRider(rideId):
-  candidates = findNearbyDrivers(rideId)   // activity
+    act:'Fix #3b — Crash Resilience',actColor:'#06b6d4',
+    map:{show:['rider','driver','gateway','location','dispatch','trip','redis_geo','redis_lock','kafka','postgres','cassandra','temporal'],active:'temporal',activeColor:'#06b6d4',broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#06b6d4">Fix #3b — Crash Resilience</div>
+      <div class="s-title">Temporal: the cascade that survives crashes.</div>
+      <div class="code-block">workflow MatchRider(rideId):
+  candidates = findNearbyDrivers(rideId)
   for driver in candidates:
-    acquireLock(driver.id)                  // activity
-    sendOffer(driver.id, rideId)            // activity
-    result = waitForResponse(timeout=10s)   // durable sleep
-    if result == ACCEPTED:
-      return success
+    acquireLock(driver.id)           // activity
+    sendOffer(driver.id, rideId)     // activity
+    result = waitForResponse(10s)    // durable sleep ←
+    if result == ACCEPTED: return
     releaseLock(driver.id)
-  fail("NO_DRIVER_AVAILABLE")`,
-    note: "Crash after sendOffer? Temporal replays from waitForResponse. No ride is lost. No driver double-booked.",
+
+Crash after sendOffer?
+Temporal replays from waitForResponse.
+No ride lost. No driver double-booked.</div>
+    </div>`
+  },
+  {
+    act:'Fix #4 — Real-time Updates',actColor:'#16a34a',
+    map:{show:ALL,active:'ringpop',activeColor:'#16a34a',broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#16a34a">Fix #4 — Real-time Updates</div>
+      <div class="s-title">WebSockets + Ringpop.</div>
+      <div class="why-nots">
+        <div class="why-pill"><span>✕</span>Not polling — 3.8M req/min of empty responses</div>
+        <div class="why-pill"><span>✕</span>Not central registry — ZooKeeper becomes a chokepoint</div>
+      </div>
+      <div class="dec-box"><p><strong>WebSocket:</strong> server pushes on update, ~50ms latency, zero wasted requests.<br><br><strong>Ringpop:</strong> consistent hashing maps H3 cell → owning server node, computed locally with no lookup. SWIM gossip for decentralized health. If an offer hits the wrong node it forwards transparently.</p></div>
+    </div>`
+  },
+  {
+    act:'API Design',actColor:'#00b4d8',
+    map:{show:ALL,active:'gateway',activeColor:'#00b4d8',broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#00b4d8">API Design</div>
+      <div class="s-title">Four endpoints. One key insight.</div>
+      <div class="s-sub" style="margin-bottom:4px">Why a separate <code style="background:#0f1420;color:#7dd3fc;padding:1px 5px;border-radius:3px">POST /fare</code> before booking? — If we accepted the fare amount from the client, a malicious request sends $0.01. Instead, the server stores the fare, returns a <strong>fare_id</strong> (2-min TTL). Client can never control the price.</div>
+      <div class="item-list" style="margin-top:12px">
+        <div class="item-row"><span class="item-label">POST /fare</span><span class="item-text">→ { fare_id, estimated_fare, eta } — stored server-side.</span></div>
+        <div class="item-row"><span class="item-label">POST /rides</span><span class="item-text">{ fare_id } → server looks up price. Creates trip: SEARCHING.</span></div>
+        <div class="item-row"><span class="item-label">PATCH /rides/:id</span><span class="item-text">{ action: accept|reject } — driver_id from JWT, never body.</span></div>
+        <div class="item-row"><span class="item-label">POST /location</span><span class="item-text">{ lat, lng, heading, speed } → GEOADD + Kafka publish.</span></div>
+      </div>
+    </div>`
   },
 
-  // ── Chapter 7: Real-time Updates ────────────────────────────────────────
+  // ── ACT 4: THE FULL PICTURE ───────────────────────────────────────────────
   {
-    ch: 6, type: "chapter",
-    chNum: "Problem 5",
-    title: "Real-time Updates",
-    subtitle: "During a trip, the rider needs to see the driver's position every 5 seconds. How?",
+    act:'The Full Picture',actColor:'#00b4d8',
+    map:{show:ALL,active:null,broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#00b4d8">The Full Picture</div>
+      <div class="s-title">The system you just built.</div>
+      <div class="s-sub" style="margin-top:8px">Every box on the map arrived through a constraint — not a single one was assumed upfront.</div>
+      <div class="item-list" style="margin-top:20px">
+        <div class="item-row"><span class="item-label" style="background:#1f0e0e;color:#f87171">1M writes/sec</span><span class="item-text">→ Redis Geo (live) + Kafka + Cassandra (history)</span></div>
+        <div class="item-row"><span class="item-label" style="background:#100f1f;color:#c4b5fd">proximity</span><span class="item-text">→ H3 hexagons + Dispatch Service + road ETA scoring</span></div>
+        <div class="item-row"><span class="item-label" style="background:#1a1008;color:#fdba74">race condition</span><span class="item-text">→ Redis SETNX EX 10 NX + Temporal workflow</span></div>
+        <div class="item-row"><span class="item-label" style="background:#081408;color:#86efac">real-time</span><span class="item-text">→ WebSockets + Ringpop consistent hashing</span></div>
+      </div>
+    </div>`
   },
   {
-    ch: 6, type: "cols",
-    title: "Polling vs WebSockets",
-    left: {
-      title: "Polling (rider requests every 5s)",
-      color: "#ef4444",
-      items: [
-        "<strong>315K trips × 12 req/min = 3.8M req/min</strong>",
-        "Mostly empty responses — driver hasn't moved yet",
-        "Up to 5 seconds of delay per update",
-        "Server stays stateless — simple",
-      ],
-    },
-    right: {
-      title: "WebSocket (server pushes updates)",
-      color: "#16a34a",
-      items: [
-        "Server pushes only when update arrives",
-        "<strong>~50ms latency</strong> — rider sees driver move in real-time",
-        "Zero wasted round-trips",
-        "Stateful servers — routing complexity",
-      ],
-    },
-    decision: "WebSockets for active trips. Polling acceptable pre-trip (lower stakes).",
+    act:'The Full Picture',actColor:'#00b4d8',
+    map:{show:ALL,active:null,broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#00b4d8">Data Models</div>
+      <div class="s-title">What goes where — and why.</div>
+      <table class="data-tbl">
+        <thead><tr><th>Store</th><th>What lives there</th><th>Why this store</th></tr></thead>
+        <tbody>
+          <tr><td>Redis Geo</td><td>Live driver positions</td><td>In-memory, sub-ms, GEOADD overwrites. Ephemeral is fine.</td></tr>
+          <tr><td>Redis SETNX</td><td>Dispatch locks</td><td>Atomic acquire + auto-expiry. No other store gives both.</td></tr>
+          <tr><td>Cassandra</td><td>Location history log</td><td>1M+ appends/sec, append-only, LSM-tree, horizontal scale.</td></tr>
+          <tr><td>PostgreSQL</td><td>Trips + fares</td><td>ACID for billing. ~350 writes/sec — well within limits.</td></tr>
+          <tr><td>Temporal</td><td>Matching workflows</td><td>Durable state, built-in timeouts, crash recovery.</td></tr>
+        </tbody>
+      </table>
+    </div>`
   },
   {
-    ch: 6, type: "content",
-    title: "The WebSocket Routing Problem",
-    subtitle: "10M connections across ~1,000 servers. Offer to wrong server = silently dropped.",
-    options: [
-      { kind: "no",  pill: "Bottleneck", head: "Central registry (Redis hash / ZooKeeper)",  body: "Every message requires a registry lookup. Becomes a coordination chokepoint. Adds latency. ZooKeeper under high write volume becomes a single point of failure." },
-      { kind: "yes", pill: "Ringpop",    head: "Consistent hashing + SWIM gossip (Uber's Ringpop)", body: "<strong>Consistent hashing</strong> maps each H3 cell to an owning node — compute locally, no lookup. <strong>SWIM gossip</strong> propagates health peer-to-peer, no central coordinator. <strong>Transparent forwarding</strong> if a message hits the wrong node." },
-    ],
-  },
-
-  // ── Chapter 8: API Design ────────────────────────────────────────────────
-  {
-    ch: 7, type: "content",
-    title: "API Design — One Key Insight",
-    subtitle: "Why is fare estimation a separate step from booking?",
-    observe: { warn: false, text: "If we accept <code>POST /rides { fare: $0.01 }</code>, a malicious client sends a fake price. Instead: <code>POST /fare</code> returns a <strong>server-stored fare_id</strong> (2-min TTL). Rider confirms with fare_id — server looks up the price. Client never controls the fare amount." },
-    bullets: [
-      ["<code>POST /fare</code> → <code>{ fare_id, estimated_fare, eta }</code> — TTL 2 min"],
-      ["<code>POST /rides { fare_id }</code> → <code>{ ride_id, status: searching }</code>"],
-      ["<code>PATCH /rides/:id { action: accept|reject }</code> — driver_id from JWT, not body"],
-      ["<code>POST /drivers/location { lat, lng, heading, speed }</code> — driver_id from JWT"],
-    ],
+    act:'Stress Test',actColor:'#00b4d8',
+    map:{show:ALL,active:null,broken:[]},
+    html:`<div class="slide">
+      <div class="s-act" style="color:#00b4d8">Stress Test</div>
+      <div class="s-title">Does the design hold under failure?</div>
+      <div class="fail-list">
+        <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Redis crashes</div><div class="fail-result">Repopulates in 5s from driver pings. Locks expire via TTL. Trip state safe in PG.</div></div></div>
+        <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Dispatch crashes mid-workflow</div><div class="fail-result">Temporal replays from last checkpoint. No dropped rides.</div></div></div>
+        <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">Driver ignores offer (10s timeout)</div><div class="fail-result">Temporal sleep ends. Lock auto-expires. Next candidate tried.</div></div></div>
+        <div class="fail-row"><div class="fail-check">✓</div><div><div class="fail-scenario">NYC surge (concert ends)</div><div class="fail-result">Kafka absorbs spike. Only nyc shard stressed. Other cities unaffected.</div></div></div>
+      </div>
+      <div class="s-note">2015 Uber outage: DB failover → 30-min global downtime. Lesson: remove the DB from the hot path. The geo index now lives exclusively in Redis.</div>
+    </div>`
   },
 
-  // ── Chapter 9: The Complete Picture ─────────────────────────────────────
+  // ── CLOSING ───────────────────────────────────────────────────────────────
   {
-    ch: 8, type: "diagram",
-    title: "The Architecture We Arrived At",
-    subtitle: "Every box below was introduced to solve a specific problem above.",
-    mermaid: `flowchart LR
-    subgraph cl[" "]
-        RA["Rider App"]
-        DA["Driver App"]
-    end
-    GW["API Gateway"]
-    subgraph sv[" "]
-        LOC["Location Svc"]
-        DSP["Dispatch Svc"]
-        TRP["Trip Svc"]
-        FAR["Fare Svc"]
-        NTF["Notification Svc"]
-    end
-    subgraph st[" "]
-        RG[("Redis Geo")]
-        RL[("Redis Lock")]
-        KF[("Kafka")]
-        PG[("PostgreSQL")]
-        CAS[("Cassandra")]
-        TMP[("Temporal")]
-    end
-    RP["Ringpop"]
-    cl -->|REST + WS| GW
-    GW --> LOC & DSP & TRP & FAR & NTF
-    LOC -->|GEOADD| RG
-    LOC -->|publish| KF
-    DSP -->|GEOSEARCH| RG
-    DSP --> RL
-    DSP <--> RP
-    KF -->|consume| CAS
-    TRP --> PG & TMP`,
-  },
-  {
-    ch: 8, type: "table",
-    title: "Data Models — What Goes Where",
-    rows: [
-      ["Trips + Fares",       "PostgreSQL",   "ACID required for billing. ~350 writes/sec — well within PG's limits."],
-      ["Live driver positions","Redis Geo",    "Ephemeral is fine — repopulates in 5s. Sub-ms GEOSEARCH."],
-      ["Driver locks",        "Redis SETNX",  "Atomic acquire + auto-expiry. No other store gives both."],
-      ["Location history",    "Cassandra",    "1M+ appends/sec, append-only, time-series partition key. LSM-tree perfect fit."],
-      ["Matching workflows",  "Temporal",     "Durable state, built-in timeouts, crash recovery."],
-    ],
-  },
-  {
-    ch: 8, type: "content",
-    title: "Stress Testing the Design",
-    subtitle: "Does every decision hold under failure?",
-    bullets: [
-      ["<strong>Redis crashes</strong> — positions repopulate in 5s from pings. Locks expire via TTL. Trips safe in PG."],
-      ["<strong>Dispatch crashes mid-workflow</strong> — Temporal replays from last checkpoint. No dropped rides."],
-      ["<strong>Driver ignores offer (10s timeout)</strong> — Temporal sleep ends, lock released, next candidate tried."],
-      ["<strong>NYC surge (concert ends)</strong> — Kafka absorbs spike. Only nyc shard stressed. SF unaffected."],
-    ],
-    note: "2015 Uber outage: DB failover → 30-min global outage. Lesson: remove the DB from the hot path. The geo index now lives exclusively in Redis.",
-  },
-  {
-    ch: 8, type: "closing",
-    title: "The Three Hard Problems",
-    items: [
-      { n: "01", color: "#ef4444", strong: "1M location writes/sec", text: "Redis Geo (live, ephemeral) + Kafka + Cassandra (durable history)" },
-      { n: "02", color: "#f97316", strong: "One driver, one rider",   text: "Redis SETNX EX 10 NX — atomic, auto-expires, no manual cleanup" },
-      { n: "03", color: "#06b6d4", strong: "Matching survives crashes", text: "Temporal durable workflow — replays from last checkpoint on restart" },
-    ],
-    note: "Everything else follows from standard distributed systems patterns.",
+    act:'',actColor:'#00b4d8',full:true,
+    map:{show:ALL,active:null,broken:[]},
+    html:`<div class="slide" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:60px;">
+      <div style="max-width:680px;width:100%">
+        <div class="s-act" style="color:#00b4d8;margin-bottom:20px">The Three Hard Problems</div>
+        <div class="closing-items">
+          <div class="closing-item">
+            <div class="closing-n" style="color:#ef4444">01</div>
+            <div class="closing-text">
+              <strong>1M location writes/sec</strong>
+              <span>Redis Geo (live, ephemeral) + Kafka + Cassandra (durable history). The two stores serve different masters — don't conflate them.</span>
+            </div>
+          </div>
+          <div class="closing-item">
+            <div class="closing-n" style="color:#f97316">02</div>
+            <div class="closing-text">
+              <strong>One driver, one rider — always</strong>
+              <span>Redis SETNX EX 10 NX — atomic, auto-expires, no manual cleanup. One command solves the race condition and the crash-recovery problem simultaneously.</span>
+            </div>
+          </div>
+          <div class="closing-item">
+            <div class="closing-n" style="color:#06b6d4">03</div>
+            <div class="closing-text">
+              <strong>The matching cascade survives crashes</strong>
+              <span>Temporal durable workflow — replays from last checkpoint on restart. Eliminates in-memory timers that die silently.</span>
+            </div>
+          </div>
+        </div>
+        <div class="s-note" style="margin-top:32px">Everything else follows from standard distributed systems patterns.</div>
+      </div>
+    </div>`
   },
 ];
 
-// ── RENDERER ─────────────────────────────────────────────────────────────────
-mermaid.initialize({ startOnLoad: false, theme: 'dark', themeVariables: { background: '#161922', primaryColor: '#1e2a40', primaryTextColor: '#e2e8f0', primaryBorderColor: '#252a3d', lineColor: '#4a5580', secondaryColor: '#161922', tertiaryColor: '#161922', edgeLabelBackground: '#161922' } });
+// ── RENDER ENGINE ─────────────────────────────────────────────────────────────
+const mount  = document.getElementById('slide-mount');
+const cpanel = document.getElementById('content-panel');
+const mpanel = document.getElementById('map-panel');
+let cur = 0, prev = -1;
 
-function bulletsHTML(arr, numbered) {
-  const tag = numbered ? 'class="bullets numbered"' : 'class="bullets"';
-  return `<ul ${tag}>${arr.map(b => `<li>${Array.isArray(b) ? b[0] : b}</li>`).join('')}</ul>`;
-}
-
-function renderSlide(s) {
-  const inner = document.createElement('div');
-  inner.className = 'slide-inner';
-
-  if (s.type === 'title') {
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      <div class="slide-subtitle">${s.subtitle}</div>
-      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
-    return `<div class="slide slide--title">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'chapter') {
-    inner.innerHTML = `
-      <div class="chapter-num" style="color:${CHAPTERS[s.ch].color}">${s.chNum}</div>
-      <div class="slide-title">${s.title}</div>
-      <div class="slide-subtitle">${s.subtitle}</div>`;
-    return `<div class="slide slide--chapter">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'callout') {
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="callout-number" style="color:${s.color}">${s.big}</div>
-      <div class="slide-title" style="font-size:28px;margin-bottom:8px">${s.unit}</div>
-      <div class="callout-label">${s.body}</div>`;
-    return `<div class="slide slide--callout">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'problem') {
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      <div class="problem-box"><div class="label">The Problem</div><p>${s.problem}</p></div>
-      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
-    return `<div class="slide">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'decision') {
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      <div class="decision-box"><div class="label">Decision</div><p>${s.decision}</p></div>
-      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
-    return `<div class="slide">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'content') {
-    const obs = s.observe ? `<div class="observe${s.observe.warn ? ' warn' : ''}">${s.observe.text}</div>` : '';
-    const buls = s.bullets ? bulletsHTML(s.bullets) : (s.bullets_numbered ? bulletsHTML(s.bullets_numbered, true) : '');
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      ${s.subtitle ? `<div class="slide-subtitle">${s.subtitle}</div>` : ''}
-      ${obs}${buls}
-      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
-    return `<div class="slide">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'options') {
-    const opts = s.options.map(o => `
-      <div class="opt ${o.kind}">
-        <span class="opt-pill">${o.pill}</span>
-        <div class="opt-body"><strong>${o.head}</strong><br>${o.body}</div>
-      </div>`).join('');
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      ${s.subtitle ? `<div class="slide-subtitle">${s.subtitle}</div>` : ''}
-      <div class="options">${opts}</div>
-      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
-    return `<div class="slide">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'code') {
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      <div class="code-block">${s.code}</div>
-      ${s.note ? `<div class="code-note">${s.note}</div>` : ''}`;
-    return `<div class="slide">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'cols') {
-    const col = (c) => `
-      <div class="col-card" style="border-color:${c.color}22;background:${c.color}09">
-        <div class="col-card-title" style="color:${c.color}">${c.title}</div>
-        <ul>${c.items.map(i => `<li>${i}</li>`).join('')}</ul>
-      </div>`;
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      <div class="cols">${col(s.left)}${col(s.right)}</div>
-      ${s.decision ? `<div class="decision-box" style="margin-top:14px"><div class="label">Decision</div><p>${s.decision}</p></div>` : ''}`;
-    return `<div class="slide">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'diagram') {
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      ${s.subtitle ? `<div class="slide-subtitle">${s.subtitle}</div>` : ''}
-      <div class="diagram-wrap" id="diag-${s._idx}"><div class="mermaid">${s.mermaid}</div></div>`;
-    return `<div class="slide">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'table') {
-    const rows = s.rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('');
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      <table class="data-table">
-        <thead><tr><th>Data</th><th>Store</th><th>Why</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`;
-    return `<div class="slide">${inner.outerHTML}</div>`;
-  }
-
-  if (s.type === 'closing') {
-    const items = s.items.map(i => `
-      <div class="closing-item">
-        <div class="closing-num" style="color:${i.color}">${i.n}</div>
-        <div class="closing-text">
-          <strong>${i.strong}</strong>
-          <span>${i.text}</span>
-        </div>
-      </div>`).join('');
-    inner.innerHTML = `
-      <div class="slide-tag" style="color:${CHAPTERS[s.ch].color}">${CHAPTERS[s.ch].name}</div>
-      <div class="slide-title">${s.title}</div>
-      <div style="margin-top:28px">${items}</div>
-      ${s.note ? `<div class="slide-note">${s.note}</div>` : ''}`;
-    return `<div class="slide">${inner.outerHTML}</div>`;
-  }
-
-  return `<div class="slide"><div class="slide-inner"><div class="slide-title">${s.title}</div></div></div>`;
-}
-
-// ── BUILD DOM ────────────────────────────────────────────────────────────────
-const stage = document.getElementById('stage');
-SLIDES.forEach((s, i) => {
-  s._idx = i;
-  const div = document.createElement('div');
-  div.innerHTML = renderSlide(s);
-  const slide = div.firstChild;
-  slide.dataset.idx = i;
-  stage.appendChild(slide);
-});
-
-const allSlides = stage.querySelectorAll('.slide');
-let current = 0;
-
-async function goTo(n) {
+function goTo(n) {
   if (n < 0 || n >= SLIDES.length) return;
-  const prev = allSlides[current];
-  const next = allSlides[n];
+  const s = SLIDES[n];
 
-  prev.classList.add('exit');
-  setTimeout(() => { prev.classList.remove('active', 'exit'); }, 350);
-  next.classList.add('active');
-  current = n;
-  updateChrome();
-
-  // Render mermaid if needed
-  if (SLIDES[n].type === 'diagram') {
-    await mermaid.run({ nodes: next.querySelectorAll('.mermaid') });
+  // Swap slide content
+  const old = mount.querySelector('.slide.active');
+  if (old) {
+    old.classList.add('exit');
+    setTimeout(() => old.remove(), 400);
   }
+
+  const wrap = document.createElement('div');
+  wrap.innerHTML = s.html;
+  const el = wrap.firstChild;
+  el.classList.add('active');
+  mount.appendChild(el);
+
+  // Full-screen vs two-panel
+  if (s.full) {
+    cpanel.classList.add('full');
+    mpanel.classList.add('hidden');
+  } else {
+    cpanel.classList.remove('full');
+    mpanel.classList.remove('hidden');
+  }
+
+  // Update map
+  updateMap(s.map);
+
+  // Update chrome
+  const leg = document.getElementById('leg-active');
+  if (s.map.active && s.actColor) {
+    leg.querySelector('.leg-dot').style.background = s.actColor;
+    document.getElementById('act-dot').style.background = s.actColor;
+    document.getElementById('act-label').style.color = s.actColor;
+  } else {
+    document.getElementById('act-dot').style.background = s.actColor||'#00b4d8';
+    document.getElementById('act-label').style.color = s.actColor||'#00b4d8';
+  }
+  document.getElementById('act-label').textContent = s.act||'';
+  document.getElementById('slide-num').textContent = `${n+1} / ${SLIDES.length}`;
+  document.getElementById('progress').style.width = `${(n+1)/SLIDES.length*100}%`;
+  document.getElementById('progress').style.background = s.actColor||'#00b4d8';
+
+  cur = n;
 }
 
-function updateChrome() {
-  const s = SLIDES[current];
-  const ch = CHAPTERS[s.ch];
-  document.getElementById('chapter-dot').style.background = ch.color;
-  document.getElementById('chapter-name').style.color = ch.color;
-  document.getElementById('chapter-name').textContent = ch.name;
-  document.getElementById('slide-counter').textContent = `${current + 1} / ${SLIDES.length}`;
-  document.getElementById('progress').style.width = `${((current + 1) / SLIDES.length) * 100}%`;
-  document.getElementById('progress').style.background = ch.color;
-}
+// Init
+goTo(0);
 
-// Init first slide
-allSlides[0].classList.add('active');
-updateChrome();
-
-// ── NAVIGATION ───────────────────────────────────────────────────────────────
+// Navigation
 document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'Enter') { e.preventDefault(); goTo(current + 1); }
-  if (e.key === 'ArrowLeft')  { e.preventDefault(); goTo(current - 1); }
-  if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); goTo(current - 1); }
+  if (e.key==='ArrowRight'||e.key==='Enter') { e.preventDefault(); goTo(cur+1); }
+  if (e.key==='ArrowLeft')                   { e.preventDefault(); goTo(cur-1); }
+  if (e.key==='Tab'&&e.shiftKey)             { e.preventDefault(); goTo(cur-1); }
 });
-
-stage.addEventListener('click', e => {
-  const x = e.clientX / window.innerWidth;
-  x > 0.2 ? goTo(current + 1) : goTo(current - 1);
+document.getElementById('stage').addEventListener('click', e => {
+  e.clientX / window.innerWidth > 0.18 ? goTo(cur+1) : goTo(cur-1);
 });
 </script>
 </body>
