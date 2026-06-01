@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Designing Google Maps</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#0d1017;color:#e2e8f0;font-family:'Segoe UI',system-ui,sans-serif;height:100vh;overflow:hidden;user-select:none;}
+
+#chrome{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(13,16,23,.96);border-bottom:1px solid #1e2540;display:flex;align-items:center;padding:0 20px;gap:12px;z-index:30;backdrop-filter:blur(8px);}
+#act-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;transition:background .5s;}
+#act-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.09em;transition:color .5s;}
+#slide-num{margin-left:auto;font-size:11px;color:#3a4468;font-variant-numeric:tabular-nums;}
+#nav-hint{font-size:11px;color:#2a3055;}
+.chrome-btn{font-size:11px;color:#3a4468;text-decoration:none;border:1px solid #1e2540;padding:3px 10px;border-radius:5px;transition:color .15s;}
+.chrome-btn:hover{color:#8892b0;}
+#progress{position:fixed;bottom:0;left:0;height:3px;background:#00b4d8;transition:width .4s ease,background .5s;z-index:30;}
+
+#stage{position:fixed;top:44px;left:0;right:0;bottom:0;display:flex;}
+#content-panel{flex:0 0 62%;height:100%;position:relative;overflow:hidden;display:flex;align-items:center;padding:28px 44px 28px 52px;}
+#map-panel{flex:0 0 38%;height:100%;display:flex;flex-direction:column;justify-content:center;padding:20px 24px 20px 0;}
+#map-panel.hidden{display:none;}
+#content-panel.full{flex:0 0 100%;padding:0;}
+
+.map-title{font-size:9px;text-transform:uppercase;letter-spacing:.1em;color:#252a3d;margin-bottom:8px;padding-left:2px;}
+#map-svg{width:100%;height:auto;display:block;}
+.map-legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;padding-left:2px;}
+.leg-row{display:flex;align-items:center;gap:5px;font-size:10px;color:#2a3055;}
+.leg-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+
+.slide{width:100%;opacity:0;transform:translateY(14px);transition:opacity .36s ease,transform .36s ease;pointer-events:none;position:absolute;}
+.slide.active{opacity:1;transform:translateY(0);pointer-events:all;position:relative;}
+.slide.exit{opacity:0;transform:translateY(-14px);}
+.s-act{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px;display:inline-block;}
+.s-title{font-size:32px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:8px;}
+.s-sub{font-size:16px;color:#8892b0;line-height:1.6;}
+.s-note{margin-top:18px;font-size:12px;color:#3a4468;border-top:1px solid #1e2540;padding-top:10px;}
+
+.slide--title{text-align:center;display:flex!important;flex-direction:column;justify-content:center;align-items:center;padding:60px;}
+.slide--title .s-title{font-size:48px;margin-bottom:14px;}
+
+.slide--callout .big-num{font-size:64px;font-weight:800;line-height:1;margin-bottom:4px;}
+.slide--callout .big-unit{font-size:19px;color:#8892b0;margin-bottom:14px;}
+
+.break-box{border-left:3px solid #dc2626;background:rgba(220,38,38,.07);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:14px;}
+.break-box p{font-size:16px;color:#fca5a5;line-height:1.65;}
+
+.opts{display:flex;flex-direction:column;gap:8px;margin:12px 0 10px;}
+.opt{border-radius:8px;padding:11px 15px;border:1px solid;}
+.opt.no{background:#120606;border-color:#3a0e0e;}
+.opt.partial{background:#121003;border-color:#3a2e08;}
+.opt-name{font-size:12.5px;font-weight:600;color:#e2e8f0;margin-bottom:3px;}
+.opt-appeal{font-size:11.5px;color:#4a5580;margin-bottom:5px;font-style:italic;}
+.opt-verdict{font-size:12.5px;line-height:1.55;}
+.opt.no .opt-verdict{color:#f87171;}
+.opt.partial .opt-verdict{color:#fbbf24;}
+.opt-pill{display:inline-block;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:1px 6px;border-radius:3px;margin-right:5px;vertical-align:middle;}
+.opt.no .opt-pill{background:#3a0e0e;color:#f87171;}
+.opt.partial .opt-pill{background:#3a2e08;color:#fbbf24;}
+
+.dec-box{border-left:3px solid #16a34a;background:rgba(22,163,74,.07);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:4px;}
+.dec-label{font-size:9px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.09em;margin-bottom:6px;}
+.dec-box p{font-size:15px;color:#86efac;line-height:1.65;}
+
+.insight-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+.ins-col{border-radius:8px;padding:14px 16px;}
+.ins-col.bad{background:#120606;border:1px solid #3a1010;}
+.ins-col.good{background:#060e06;border:1px solid #0e3010;}
+.ins-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;}
+.ins-col.bad .ins-head{color:#ef4444;}
+.ins-col.good .ins-head{color:#16a34a;}
+.ins-col p{font-size:13.5px;line-height:1.6;color:#8892b0;}
+.ins-col p strong{color:#e2e8f0;}
+
+.item-list{margin-top:12px;display:flex;flex-direction:column;gap:9px;}
+.item-row{display:flex;gap:10px;align-items:flex-start;}
+.item-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;padding:3px 8px;border-radius:5px;background:#1e2a3a;color:#7dd3fc;white-space:nowrap;margin-top:2px;flex-shrink:0;}
+.item-text{font-size:14.5px;color:#8892b0;line-height:1.5;}
+.item-text strong{color:#e2e8f0;}
+
+.agenda-list{margin-top:16px;display:flex;flex-direction:column;gap:11px;}
+.ag-row{display:flex;gap:12px;align-items:flex-start;}
+.ag-num{font-size:22px;font-weight:800;line-height:1;flex-shrink:0;width:34px;}
+.ag-text{font-size:15px;color:#8892b0;padding-top:3px;line-height:1.4;}
+
+.code-block{background:#0a0e18;border:1px solid #1e2540;border-radius:10px;padding:16px 18px;font-family:'Cascadia Code','Fira Code',monospace;font-size:12.5px;color:#7dd3fc;line-height:1.8;margin-top:12px;white-space:pre;}
+.code-note{margin-top:10px;font-size:13px;color:#5a6494;line-height:1.5;}
+
+.data-tbl{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px;}
+.data-tbl th{padding:7px 11px;background:#0a0e18;color:#3a4468;font-size:10px;text-transform:uppercase;letter-spacing:.06em;text-align:left;}
+.data-tbl td{padding:9px 11px;border-bottom:1px solid #181d2c;line-height:1.4;}
+.data-tbl tr:last-child td{border:none;}
+.data-tbl td:first-child{color:#7dd3fc;font-weight:600;font-size:12.5px;}
+.data-tbl td:nth-child(2){color:#c3cfe2;}
+.data-tbl td:last-child{color:#5a6494;font-size:12px;}
+
+.fail-list{margin-top:12px;display:flex;flex-direction:column;gap:7px;}
+.fail-row{display:flex;gap:10px;padding:10px 14px;border-radius:8px;border:1px solid rgba(22,163,74,.2);background:rgba(22,163,74,.04);}
+.fail-check{color:#16a34a;font-size:15px;flex-shrink:0;padding-top:1px;}
+.fail-scenario{font-size:12.5px;font-weight:600;color:#c3cfe2;margin-bottom:2px;}
+.fail-result{font-size:12.5px;color:#5a6494;line-height:1.4;}
+
+.closing-items{margin-top:32px;display:flex;flex-direction:column;gap:18px;}
+.closing-item{display:flex;gap:14px;align-items:flex-start;}
+.closing-n{font-size:26px;font-weight:800;line-height:1;flex-shrink:0;width:36px;}
+.closing-text strong{display:block;font-size:16px;color:#e2e8f0;margin-bottom:3px;}
+.closing-text span{font-size:13.5px;color:#5a6494;line-height:1.5;}
+</style>
+</head>
+<body>
+
+<div id="chrome">
+  <div id="act-dot"></div>
+  <span id="act-label"></span>
+  <span id="slide-num"></span>
+  <span id="nav-hint">Enter / → next &nbsp;·&nbsp; ← back &nbsp;·&nbsp; click to advance</span>
+  <a href="hld.html" class="chrome-btn">Full HLD</a>
+</div>
+
+<div id="stage">
+  <div id="content-panel"><div id="slide-mount"></div></div>
+  <div id="map-panel">
+    <div class="map-title">Architecture — current state</div>
+    <svg id="map-svg" viewBox="0 0 314 220" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="map-legend">
+      <div class="leg-row"><div class="leg-dot" style="background:#1e2540"></div>not yet introduced</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#374162"></div>in the system</div>
+      <div class="leg-row" id="leg-active"><div class="leg-dot" style="background:#00b4d8"></div>focus</div>
+      <div class="leg-row"><div class="leg-dot" style="background:#dc2626"></div>breaking</div>
+    </div>
+  </div>
+</div>
+<div id="progress"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+// MAP — two non-overlapping sections in the same SVG
+//
+//  Section A (naive design):  y=0..52    — user_n, server_n, db_n
+//  Section B (production):    y=62..210  — clients, gateway, services, storage
+// ─────────────────────────────────────────────────────────────────────────────
+const N = {
+  // ── Section A: naive (y 0–52) ──────────────────────────────────────────────
+  user_n:   {x:2,   y:19,  w:54, h:22, label:'User'},
+  server_n: {x:72,  y:19,  w:60, h:22, label:'API Server'},
+  db_n:     {x:152, y:19,  w:72, h:22, label:'Map Database'},
+
+  // ── Section B: production (y 62–210) ─────────────────────────────────────
+  // Clients (left column)
+  mobile:      {x:2,   y:68,  w:54, h:22, label:'Mobile'},
+  browser:     {x:2,   y:98,  w:54, h:22, label:'Browser'},
+  probes:      {x:2,   y:128, w:54, h:22, label:'GPS Probes'},
+  // Entry (centered between mobile and browser)
+  gateway:     {x:72,  y:83,  w:60, h:22, label:'Gateway'},
+  // Services
+  tile_svc:    {x:148, y:68,  w:72, h:22, label:'Tile Svc'},
+  route_svc:   {x:148, y:98,  w:72, h:22, label:'Routing Svc'},
+  search_svc:  {x:148, y:128, w:72, h:22, label:'Search Svc'},
+  traffic_svc: {x:148, y:158, w:72, h:22, label:'Traffic Svc'},
+  eta_svc:     {x:148, y:188, w:72, h:22, label:'ETA Svc'},
+  // Storage
+  cdn:         {x:234, y:68,  w:76, h:22, label:'CDN / Tiles'},
+  graph:       {x:234, y:98,  w:76, h:22, label:'Route Graph'},
+  elastic:     {x:234, y:128, w:76, h:22, label:'Elasticsearch'},
+  bigtable:    {x:234, y:158, w:76, h:22, label:'Bigtable'},
+  map_build:   {x:234, y:188, w:76, h:22, label:'Map Pipeline'},
+};
+
+const CONNS = [
+  // Section A
+  ['user_n','server_n'], ['server_n','db_n'],
+  // Section B — request path
+  ['mobile','gateway'], ['browser','gateway'],
+  ['gateway','tile_svc'], ['gateway','route_svc'],
+  ['gateway','search_svc'], ['gateway','eta_svc'],
+  // Section B — service → storage
+  ['tile_svc','cdn'],
+  ['route_svc','graph'],
+  ['search_svc','elastic'],
+  ['traffic_svc','bigtable'],
+  ['eta_svc','bigtable'],
+  ['eta_svc','graph'],
+  // Section B — traffic ingest
+  ['probes','traffic_svc'],
+];
+
+const NAIVE = ['user_n','server_n','db_n'];
+const ALL   = ['mobile','browser','probes','gateway',
+               'tile_svc','route_svc','search_svc','traffic_svc','eta_svc',
+               'cdn','graph','elastic','bigtable','map_build'];
+
+// ── Build SVG ─────────────────────────────────────────────────────────────────
+const NS = 'http://www.w3.org/2000/svg';
+function el(tag,attrs={}){const e=document.createElementNS(NS,tag);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));return e;}
+
+(function buildMap(){
+  const svg = document.getElementById('map-svg');
+
+  const defs = el('defs');
+  defs.innerHTML = `
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2.5" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glow-red" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>`;
+  svg.appendChild(defs);
+
+  const la = el('text',{x:2,y:2,'font-size':'6.5','font-family':'Segoe UI,system-ui,sans-serif',
+    'font-weight':'600','text-anchor':'start','dominant-baseline':'hanging'});
+  la.style.fill='#1e2540'; la.textContent='NAIVE DESIGN'; svg.appendChild(la);
+
+  const div = el('line',{x1:0,y1:57,x2:314,y2:57,stroke:'#1a1f30','stroke-width':'1','stroke-dasharray':'3,4'});
+  svg.appendChild(div);
+
+  const lb = el('text',{x:2,y:59,'font-size':'6.5','font-family':'Segoe UI,system-ui,sans-serif',
+    'font-weight':'600','text-anchor':'start','dominant-baseline':'hanging'});
+  lb.style.fill='#1e2540'; lb.textContent='PRODUCTION SYSTEM'; svg.appendChild(lb);
+
+  const cg = el('g',{id:'conns'});
+  CONNS.forEach(([a,b])=>{
+    const na=N[a],nb=N[b]; if(!na||!nb) return;
+    const line = el('line',{
+      id:`c-${a}-${b}`,
+      x1:na.x+na.w, y1:na.y+na.h/2,
+      x2:nb.x,      y2:nb.y+nb.h/2,
+      stroke:'#1e2540','stroke-width':'1',
+    });
+    line.style.transition='stroke .45s,opacity .45s';
+    line.style.opacity='0';
+    cg.appendChild(line);
+  });
+  svg.appendChild(cg);
+
+  const ng = el('g',{id:'nodes'});
+  Object.entries(N).forEach(([id,n])=>{
+    const g = el('g',{id:`nd-${id}`});
+    const r = el('rect',{id:`nd-${id}-r`,x:n.x,y:n.y,width:n.w,height:n.h,rx:'5'});
+    r.style.transition='fill .45s,stroke .45s,filter .45s';
+    const t = el('text',{
+      id:`nd-${id}-t`,x:n.x+n.w/2,y:n.y+n.h/2,
+      'text-anchor':'middle','dominant-baseline':'central',
+      'font-size':'7','font-family':'Segoe UI,system-ui,sans-serif','font-weight':'500',
+    });
+    t.style.transition='fill .45s';
+    t.textContent=n.label;
+    g.appendChild(r); g.appendChild(t); ng.appendChild(g);
+  });
+  svg.appendChild(ng);
+
+  Object.keys(N).forEach(id=>setNode(id,'ghost'));
+})();
+
+// ── Node state helpers ────────────────────────────────────────────────────────
+function hexA(h,a){const r=parseInt(h.slice(1,3),16),g=parseInt(h.slice(3,5),16),b=parseInt(h.slice(5,7),16);return `rgba(${r},${g},${b},${a})`;}
+
+function setNode(id,state,color){
+  const r=document.getElementById(`nd-${id}-r`);
+  const t=document.getElementById(`nd-${id}-t`);
+  if(!r||!t) return;
+  if(state==='ghost')  { r.style.fill='#0d1017';  r.style.stroke='#14192a'; r.style.filter='none'; t.style.fill='#1a2038'; }
+  if(state==='visible'){ r.style.fill='#131b2a';  r.style.stroke='#283050'; r.style.filter='none'; t.style.fill='#566080'; }
+  if(state==='active') { const c=color||'#00b4d8'; r.style.fill=hexA(c,.13); r.style.stroke=c; r.style.filter='url(#glow)'; t.style.fill=c; }
+  if(state==='broken') { r.style.fill='#1a0606'; r.style.stroke='#dc2626'; r.style.filter='url(#glow-red)'; t.style.fill='#f87171'; }
+}
+
+function updateMap(state){
+  const show=new Set(state.show||[]);
+  const broken=new Set(state.broken||[]);
+  Object.keys(N).forEach(id=>{
+    if(broken.has(id))         setNode(id,'broken');
+    else if(id===state.active) setNode(id,'active',state.activeColor);
+    else if(show.has(id))      setNode(id,'visible');
+    else                       setNode(id,'ghost');
+  });
+  CONNS.forEach(([a,b])=>{
+    const line=document.getElementById(`c-${a}-${b}`); if(!line) return;
+    const av=show.has(a)||broken.has(a)||a===state.active;
+    const bv=show.has(b)||broken.has(b)||b===state.active;
+    if(av&&bv){
+      line.style.opacity='.5';
+      const c=state.activeColor||'#00b4d8';
+      if(broken.has(a)||broken.has(b)) line.setAttribute('stroke','#3a1010');
+      else if(a===state.active||b===state.active) line.setAttribute('stroke',hexA(c,.6));
+      else line.setAttribute('stroke','#243050');
+    } else {
+      line.style.opacity='0';
+    }
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SLIDES
+// ─────────────────────────────────────────────────────────────────────────────
+const SLIDES = [
+
+// ── ACT 1: THE BET ────────────────────────────────────────────────────────────
+{
+  act:'',actColor:'#00b4d8',full:true,
+  map:{show:[],active:null,broken:[]},
+  html:`<div class="slide slide--title">
+    <div class="s-act" style="color:#00b4d8">System Design Interview</div>
+    <div class="s-title">Designing Google Maps</div>
+    <div class="s-sub">Every component earned through a problem.<br>Not one assumed upfront.</div>
+    <div class="s-note" style="margin-top:28px;border:none">Enter / → advance &nbsp;·&nbsp; ← back &nbsp;·&nbsp; click right side to advance</div>
+  </div>`
+},
+{
+  act:'The Stakes',actColor:'#00b4d8',
+  map:{show:['mobile','browser'],active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">The Stakes</div>
+    <div class="s-title">A billion users. A moving world.</div>
+    <div class="item-list">
+      <div class="item-row"><span class="item-label">Map Tiles</span><span class="item-text">Render any location at any zoom level, worldwide.</span></div>
+      <div class="item-row"><span class="item-label">Search</span><span class="item-text">Find places by name or category near a given point. <strong>"Coffee near Union Square."</strong></span></div>
+      <div class="item-row"><span class="item-label">Routing</span><span class="item-text">Turn-by-turn directions: driving, walking, transit. Re-route on deviation.</span></div>
+      <div class="item-row"><span class="item-label">Traffic</span><span class="item-text">Live congestion overlay. ETA that accounts for current and predicted conditions.</span></div>
+      <div class="item-row"><span class="item-label" style="background:#1f0808;color:#f87171">Out of scope</span><span class="item-text">Street View, satellite imagery, transit schedules, business listing management.</span></div>
+    </div>
+  </div>`
+},
+{
+  act:'The Constraint',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:[]},
+  html:`<div class="slide slide--callout">
+    <div class="s-act" style="color:#ef4444">The Constraint That Shapes Everything</div>
+    <div class="big-num" style="color:#ef4444">100,000,000</div>
+    <div class="big-unit">road network nodes, globally</div>
+    <div class="s-sub" style="max-width:460px">Dijkstra's algorithm on this graph takes <strong>~2 seconds</strong> per route.<br>Users expect a result in <strong>under 200ms</strong>.<br>That's a <strong>10× gap</strong> no amount of horizontal scaling can close — it's algorithmic.</div>
+  </div>`
+},
+{
+  act:'Naive Design',actColor:'#f59e0b',
+  map:{show:NAIVE,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f59e0b">Naive Design</div>
+    <div class="s-title">Start with the simplest thing.</div>
+    <div class="s-sub" style="margin-top:8px">One API server. One database containing the road graph, all POI data, and raw map geometry. The server runs Dijkstra for routes, queries the DB for search, and renders tiles on demand.</div>
+    <div class="s-sub" style="margin-top:14px;color:#3a4468">Watch the map. Now let's find where it breaks — and how each break drives an architectural decision.</div>
+    <div class="s-note">Sections: top = naive design · bottom = production (coming soon)</div>
+  </div>`
+},
+
+// ── ACT 2: THE NAIVE DESIGN BREAKS ───────────────────────────────────────────
+{
+  act:'Break #1',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['server_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #1</div>
+    <div class="s-title">Routing takes 2 seconds.</div>
+    <div class="break-box"><p>Dijkstra on 100M nodes + 200M edges = <strong>~2,000ms</strong> per route.<br>SLA is <strong>200ms</strong>. We're 10× over the limit.<br>Throwing more servers at this doesn't help — each server still runs a 2s algorithm. The problem is in the graph traversal, not the hardware.</p></div>
+    <div class="s-note">API server glowing red — it's the bottleneck.</div>
+  </div>`
+},
+{
+  act:'Break #2',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['server_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #2</div>
+    <div class="s-title">Can't render tiles on demand.</div>
+    <div class="break-box"><p>Rendering one tile from raw geometry takes <strong>50–200ms</strong>.<br>Google Maps receives <strong>~58,000 tile requests/second</strong> at peak.<br>On-demand rendering requires <strong>5,800 dedicated render threads</strong> — just to keep up. And tiles still arrive 100ms+ late.</p></div>
+  </div>`
+},
+{
+  act:'Break #3',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #3</div>
+    <div class="s-title">Traffic data is a 3.5 PB/day firehose.</div>
+    <div class="break-box"><p>~100M GPS probes per minute from Android devices.<br>That's <strong>1.7M writes/second</strong>.<br>At 24 bytes per ping: <strong>3.5 PB of raw data per day</strong>.<br>No database in existence can ingest this. Even if it could — querying raw pings for "current speed on I-280" would take minutes.</p></div>
+    <div class="s-note">Database node flashing red.</div>
+  </div>`
+},
+{
+  act:'Break #4',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #4</div>
+    <div class="s-title">Search needs two indexes simultaneously.</div>
+    <div class="break-box"><p>"Coffee shops near Union Square" requires:<br><strong>Text relevance</strong> — is this thing a coffee shop?<br><strong>Spatial proximity</strong> — is it near Union Square?<br><br>A text index can't pre-filter by geography. A spatial index can't rank by text relevance. SQL can't efficiently use both at 200M POIs — query times degrade to 500ms+.</p></div>
+  </div>`
+},
+{
+  act:'Break #5',actColor:'#ef4444',
+  map:{show:NAIVE,active:null,broken:['server_n','db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Break #5</div>
+    <div class="s-title">Map updates cascade everywhere.</div>
+    <div class="break-box"><p>A new road requires: re-rendering <strong>thousands of tiles</strong> (hours), rebuilding the <strong>routing graph</strong> (4 hours), updating the <strong>search index</strong> (minutes).<br><br>Synchronous updates block service. Async independent updates create windows where routing navigates over a road the tile shows as closed. Inconsistency is user-visible and dangerous.</p></div>
+  </div>`
+},
+{
+  act:'Design Agenda',actColor:'#f59e0b',
+  map:{show:NAIVE,active:null,broken:['user_n','server_n','db_n']},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f59e0b">Design Agenda</div>
+    <div class="s-title">Five breaks. Five fixes. In order.</div>
+    <div class="agenda-list">
+      <div class="ag-row"><div class="ag-num" style="color:#8b5cf6">01</div><div class="ag-text">Routing in &lt;200ms on a 100M-node graph — algorithmic speedup needed</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#f59e0b">02</div><div class="ag-text">58K tile requests/sec — can't render on demand, need a different model</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#ef4444">03</div><div class="ag-text">1.7M GPS writes/sec — transform the firehose before it hits storage</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#06b6d4">04</div><div class="ag-text">Text + spatial search combined — two indexes, one query</div></div>
+      <div class="ag-row"><div class="ag-num" style="color:#f97316">05</div><div class="ag-text">Map updates cascade — coordinate changes across three systems safely</div></div>
+    </div>
+  </div>`
+},
+
+// ── ACT 3: FIX IT PIECE BY PIECE ─────────────────────────────────────────────
+
+// Fix 1a: Routing speed — options
+{
+  act:'Fix #1 — Routing',actColor:'#8b5cf6',
+  map:{show:['mobile','browser','gateway','route_svc','graph'],active:'route_svc',activeColor:'#8b5cf6',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#8b5cf6">Fix #1 — Routing at Speed</div>
+    <div class="s-title">How do we route in &lt;200ms?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Standard Dijkstra</div>
+        <div class="opt-appeal">Guaranteed optimal path. Simple. Every CS grad can reason about it.</div>
+        <div class="opt-verdict">O(V log V + E) on 100M nodes = ~2 seconds. Not a hardware problem — it's the algorithm. 10,000 servers each running a 2s algorithm still take 2 seconds.</div>
+      </div>
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>A* with straight-line heuristic</div>
+        <div class="opt-appeal">Guides search toward the destination. 2–4× faster than Dijkstra on typical road graphs.</div>
+        <div class="opt-verdict">Still visits millions of nodes for cross-country routes. NYC → LA via A*: ~800ms. Need 200ms. Better, but not close enough.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Better</span>Bidirectional A*</div>
+        <div class="opt-appeal">Search from source AND destination simultaneously, meet in the middle. ~4× speedup over standard A*.</div>
+        <div class="opt-verdict">Gets to ~500ms for long routes. Closer, but still 2.5× too slow. Correctness also requires careful handling of the stopping criterion.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Contraction Hierarchies</div><p>Offline preprocessing assigns an importance rank to every node (highways = important, cul-de-sacs = not). Contract unimportant nodes out, add shortcut edges. Query explores ~5,000 nodes instead of 50M. Result: <strong>5–20ms per route</strong>. A 1000× speedup.</p></div>
+  </div>`
+},
+// Fix 1b: CH insight
+{
+  act:'Fix #1 — Routing',actColor:'#8b5cf6',
+  map:{show:['mobile','browser','gateway','route_svc','graph'],active:'graph',activeColor:'#8b5cf6',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#8b5cf6">Fix #1 — Routing at Speed</div>
+    <div class="s-title">Why does CH work so well on road networks?</div>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">The naive view</div>
+        <p>A graph is a graph. Dijkstra visits every reachable node before settling the destination. No way around it without heuristics or preprocessing.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">The aha moment</div>
+        <p>Real road networks have <strong>natural hierarchies</strong>. Most long trips use highways. Contracting a cul-de-sac adds one shortcut edge and eliminates it from <em>all future queries</em>. After contracting the bottom 90% of nodes, the effective query graph is tiny.<br><br>This <strong>only works</strong> because real roads have hierarchy. A random graph with 100M nodes would not compress this way.</p>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Stored in RAM</div><p>CH augmented graph serialized to ~8GB binary file. Loaded at routing server startup in ~45 sec. Rebuilt nightly for minor updates, weekly for global changes. Zero shared state — routing servers are stateless read replicas.</p></div>
+  </div>`
+},
+
+// Fix 2a: Tiles — options
+{
+  act:'Fix #2 — Tile Serving',actColor:'#f59e0b',
+  map:{show:['mobile','browser','gateway','tile_svc','cdn'],active:'tile_svc',activeColor:'#f59e0b',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f59e0b">Fix #2 — Tile Serving</div>
+    <div class="s-title">How do we serve 58K tiles/sec?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>On-demand rendering</div>
+        <div class="opt-appeal">Always fresh. No storage overhead. Supports infinite style variations without pre-baking.</div>
+        <div class="opt-verdict">100ms to render one tile × 58K req/sec = 5,800 concurrent render threads. CPU cost alone is 100× today's cloud budgets. And tiles still arrive 100ms+ late before even leaving the datacenter.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Better</span>On-demand + aggressive caching (Varnish/Redis)</div>
+        <div class="opt-appeal">Cache popular tiles. Downtown Manhattan at zoom 15 is served from cache 99% of requests.</div>
+        <div class="opt-verdict">The long tail is enormous: Earth at zoom 20 = 274 trillion tile positions. Cold-cache penalty still 100ms. Worse: when map data changes, which of the 274T tile positions are affected? Cache invalidation is a hard problem at this scale.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Pre-render at build time + CDN</div><p>During map version build, pre-render every non-empty tile at every zoom level. Store in GCS. Address by <code style="background:#0a0e18;color:#7dd3fc;padding:1px 4px;border-radius:3px">/v{version}/{zoom}/{x}/{y}.pbf</code>. Tiles are <strong>immutable</strong> — new map version = new URLs. CDN cache hit rate: 99.8%. Only ~116 tile req/sec reach origin servers.</p></div>
+  </div>`
+},
+// Fix 2b: Vector tiles
+{
+  act:'Fix #2 — Tile Serving',actColor:'#f59e0b',
+  map:{show:['mobile','browser','gateway','tile_svc','cdn'],active:'cdn',activeColor:'#f59e0b',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f59e0b">Fix #2 — Tile Serving</div>
+    <div class="s-title">Raster PNG vs Vector tiles.</div>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">✕ Raster (PNG)</div>
+        <p>Server renders a pixel image. Simple to serve — it's just a static file.<br><br>But: <strong>~5KB/tile</strong> at zoom 15 = 1.7TB for city-level tiles alone. <strong>No smooth zoom</strong> — each zoom level is a separate image. Dark mode requires a separate pre-rendered tile set. Labels are baked in — can't change language without new tiles.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ Vector (.pbf)</div>
+        <p>Server sends compressed geometry data. Client renders in WebGL/Metal.<br><br><strong>10× smaller</strong>: ~0.5KB/tile. <strong>Smooth zoom</strong> — geometry scales continuously. Dark mode, accessibility themes applied client-side without new tiles. Labels rendered in user's locale. Text search highlights work in the rendered map. One tile file, infinite visual variations.</p>
+      </div>
+    </div>
+    <div class="s-note">The rendering shift from server to client saves ~90% storage and enables features impossible with raster tiles.</div>
+  </div>`
+},
+
+// Fix 3a: Traffic — options
+{
+  act:'Fix #3 — Real-time Traffic',actColor:'#ef4444',
+  map:{show:['probes','traffic_svc','bigtable'],active:'traffic_svc',activeColor:'#ef4444',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Fix #3 — Real-time Traffic</div>
+    <div class="s-title">1.7M GPS writes/sec. Now what?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Store all raw GPS pings in a database</div>
+        <div class="opt-appeal">Complete audit trail. Enables ML training on raw traces. Allows future replay for any traffic question.</div>
+        <div class="opt-verdict">At 1.7M writes/sec, no off-the-shelf DB handles this. Even Cassandra needs 17 nodes just for ingestion. Storage: <strong>3.5 PB/day</strong>. Aggregating segment speeds from raw pings at query time: minutes, not milliseconds.</div>
+      </div>
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Random sampling — store 1% of probes</div>
+        <div class="opt-appeal">Reduces volume 100× to ~17K writes/sec. Manageable with a standard database.</div>
+        <div class="opt-verdict">Works on major highways. Fails on side streets: a 3-car accident generates 2–3 probes/min — 1% sampling = <strong>0 data points</strong>. Accuracy degrades exactly where incidents happen most.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Full ingest → stream processing → aggregate to segments</div><p>Kafka absorbs all probes at full rate. Stream processors (Dataflow/Flink) <strong>map-match</strong> each probe to a road segment and compute per-segment speeds. Only derived segment speeds (~40MB/snapshot) are persisted to Bigtable. Raw pings never touch persistent storage.</p></div>
+  </div>`
+},
+// Fix 3b: Map-matching
+{
+  act:'Fix #3 — Real-time Traffic',actColor:'#ef4444',
+  map:{show:['probes','traffic_svc','bigtable'],active:'bigtable',activeColor:'#ef4444',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#ef4444">Fix #3 — Real-time Traffic</div>
+    <div class="s-title">GPS says you're on the river. You're not.</div>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">✕ Naive snap-to-nearest-road</div>
+        <p>GPS accuracy is <strong>±5–20m</strong>. Near a highway overpass, "nearest road" might be the wrong level. On parallel one-way streets, the GPS error puts you on the wrong street.<br><br>15% of pings assigned to the wrong segment → corrupted speed estimates for that road.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ Hidden Markov Model</div>
+        <p>Treats map-matching as a <strong>sequence problem</strong>. Given a sequence of noisy GPS points, find the most likely sequence of road segments — considering both point-to-road distance <em>and</em> transition probabilities between adjacent segments.<br><br>A car driving 60 mph doesn't teleport between non-adjacent segments between pings. HMM makes this constraint explicit.</p>
+      </div>
+    </div>
+    <div class="s-note">Segment speeds written to Bigtable: key = segment_id#timestamp. Traffic fresh within 2–3 minutes.</div>
+  </div>`
+},
+
+// Fix 4a: Search — options
+{
+  act:'Fix #4 — Location Search',actColor:'#06b6d4',
+  map:{show:['mobile','browser','gateway','search_svc','elastic'],active:'search_svc',activeColor:'#06b6d4',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#06b6d4">Fix #4 — Location Search</div>
+    <div class="s-title">Text + spatial: how do you combine them?</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>SQL full-text (tsvector) + PostGIS spatial index</div>
+        <div class="opt-appeal">Single system. ACID transactions. Both capabilities exist in PostgreSQL today.</div>
+        <div class="opt-verdict">At 200M POIs, the query planner must pick one index — text or spatial. It can't efficiently use both simultaneously. Under write pressure from 25M daily map updates, index maintenance degrades query latency to <strong>500ms+</strong>.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Better</span>Elasticsearch with geo_distance filter</div>
+        <div class="opt-appeal">Industry-standard approach. Excellent BM25 text scoring. geo_distance filter for proximity. Scales to hundreds of millions of docs.</div>
+        <div class="opt-verdict"><code style="background:#0a0e18;color:#fbbf24;padding:1px 4px;border-radius:3px">geo_distance</code> is a <em>post-filter</em>: Elasticsearch first retrieves all text matches globally, then filters by radius. For broad categories like "coffee", this processes 10M+ docs before filtering. Expensive. Can't do polygon-within queries efficiently.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Elasticsearch + S2 cell index tokens</div><p>Each POI indexed with its S2 cell token at levels 10–15 as keyword fields. Spatial pre-filter = Lucene term lookup on cell tokens — near O(1). Combined with BM25 text scoring + distance decay. <strong>200M POIs, 30–50ms p99.</strong></p></div>
+  </div>`
+},
+// Fix 4b: S2 cells
+{
+  act:'Fix #4 — Location Search',actColor:'#06b6d4',
+  map:{show:['mobile','browser','gateway','search_svc','elastic'],active:'elastic',activeColor:'#06b6d4',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#06b6d4">Fix #4 — Location Search</div>
+    <div class="s-title">Why S2 cells beat bounding boxes.</div>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">✕ Bounding box filter</div>
+        <p>Compute min/max lat/lng, filter all POIs within that rectangle. Simple to implement.<br><br>Problem: it's a <strong>range scan</strong> — scans all POIs between two lat/lng values. On 200M docs, even with a spatial index this still processes millions of candidates for large radii.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ S2 cell tokens</div>
+        <p>Google's S2 library maps Earth onto a <strong>Hilbert space-filling curve</strong>. Adjacent cells have adjacent IDs. A circular search radius maps to a small set of S2 cell prefixes.<br><br>Spatial pre-filter = Lucene <strong>terms query on keyword fields</strong> = O(1) bitmap lookup. 200M POIs reduced to ~10K candidates before any BM25 text scoring.</p>
+      </div>
+    </div>
+    <div class="s-note">Level 10 ≈ city district (1.27 km²) · Level 13 ≈ neighborhood block (153 m²) · Index each POI at 4–5 levels to cover all search radii.</div>
+  </div>`
+},
+
+// Fix 5a: Map updates — options
+{
+  act:'Fix #5 — Map Data Updates',actColor:'#f97316',
+  map:{show:['mobile','browser','gateway','tile_svc','route_svc','search_svc','cdn','graph','elastic','map_build'],
+       active:null,broken:['cdn','graph','elastic'],activeColor:'#f97316'},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f97316">Fix #5 — Map Data Updates</div>
+    <div class="s-title">A new road breaks three systems at once.</div>
+    <div class="opts">
+      <div class="opt no">
+        <div class="opt-name"><span class="opt-pill">✕ Rejected</span>Synchronous update: all three systems atomically</div>
+        <div class="opt-appeal">Strong consistency. Users never see routing use a road that tiles show as closed.</div>
+        <div class="opt-verdict">Tile rebuild: hours. CH graph rebuild: 4 hours. During that window, everything blocks. Any failure rolls back all three. Incompatible with 99.99% availability SLA.</div>
+      </div>
+      <div class="opt partial">
+        <div class="opt-name"><span class="opt-pill">⚠ Better</span>Each service subscribes to a change feed independently</div>
+        <div class="opt-appeal">No blocking. Each system updates at its own pace. Tiles update in hours, search in minutes, routing in hours.</div>
+        <div class="opt-verdict">Creates dangerous inconsistency windows: routing might direct you down a road the tile shows as closed. Tile rebuild delay can be hours. User-visible and potentially dangerous.</div>
+      </div>
+    </div>
+    <div class="dec-box"><div class="dec-label">Decision — Immutable versioned snapshots + atomic version promotion</div><p>Build all three derived systems against a new snapshot in parallel. Promote a single version pointer atomically only when all three are ready. All serving systems switch versions simultaneously.</p></div>
+  </div>`
+},
+// Fix 5b: Version snapshot detail
+{
+  act:'Fix #5 — Map Data Updates',actColor:'#f97316',
+  map:{show:['mobile','browser','gateway','tile_svc','route_svc','search_svc','cdn','graph','elastic','map_build'],
+       active:'map_build',activeColor:'#f97316',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#f97316">Fix #5 — Map Data Updates</div>
+    <div class="s-title">The build pipeline is the consistency gate.</div>
+    <div class="insight-cols">
+      <div class="ins-col bad">
+        <div class="ins-head">✕ Service-by-service updates</div>
+        <p>Tiles say v1002 (old road).<br>Routing graph says v1003 (new road).<br>Search index says v1002 (old road).<br><br>User gets turn-by-turn navigation onto a road the map renders as under construction. <strong>3-hour inconsistency window</strong> for every map update.</p>
+      </div>
+      <div class="ins-col good">
+        <div class="ins-head">✓ Atomic version promotion</div>
+        <p>Map changes batch every 15 min → new snapshot in Spanner.<br>Build pipeline generates tiles v1003, CH graph v1003, ES index v1003 <em>in parallel</em>.<br>When all three are ready, a single Spanner write updates the <code style="background:#0a0e18;color:#7dd3fc;padding:1px 4px;border-radius:3px">current_version</code> row.<br><strong>All services read the same version instantly.</strong></p>
+      </div>
+    </div>
+    <div class="s-note">Emergency closures: hot-patch routing graph edge weight to ∞ immediately. Full snapshot rebuild follows asynchronously.</div>
+  </div>`
+},
+
+// ETA service
+{
+  act:'ETA Service',actColor:'#16a34a',
+  map:{show:['mobile','browser','gateway','route_svc','eta_svc','graph','bigtable','traffic_svc','probes'],
+       active:'eta_svc',activeColor:'#16a34a',broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#16a34a">ETA Service</div>
+    <div class="s-title">ETA is routing without the polyline.</div>
+    <div class="s-sub" style="margin-bottom:14px">Route directions give you the turn-by-turn path. ETA gives you just the number. Same CH query — skip path reconstruction. 40% faster and smaller response.</div>
+    <div class="item-list">
+      <div class="item-row"><span class="item-label">Current speed</span><span class="item-text">Per-segment speeds from Bigtable — fresh within 2–3 minutes of real conditions.</span></div>
+      <div class="item-row"><span class="item-label">Predicted speed</span><span class="item-text">Historical profiles: segment_id × day-of-week × hour → typical speed. Covers the <strong>departure_time</strong> parameter for future planning.</span></div>
+      <div class="item-row"><span class="item-label">Time-dependent CH</span><span class="item-text">Edge weights vary by hour. A route via I-280 at 8am Monday gets higher weight than 2pm Sunday. CH preprocessing handles time-dependent edge weights.</span></div>
+      <div class="item-row"><span class="item-label" style="background:#0a1a2e;color:#7dd3fc">Why a separate ETA endpoint?</span><span class="item-text">Ride-hailing apps call ETA for every driver-to-destination pair. Directions is called once per trip. O(drivers × destinations) vs O(1) — the response size difference matters enormously at scale.</span></div>
+    </div>
+  </div>`
+},
+
+// Full architecture
+{
+  act:'Full Architecture',actColor:'#00b4d8',
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">Full Architecture</div>
+    <div class="s-title">Every node on the map, earned.</div>
+    <div class="item-list">
+      <div class="item-row"><span class="item-label" style="background:#1e1635;color:#a78bfa">Routing</span><span class="item-text"><strong>Routing Svc</strong> loads CH graph (~8GB) into RAM. 5–20ms per route. Stateless — scales horizontally.</span></div>
+      <div class="item-row"><span class="item-label" style="background:#431407;color:#fdba74">Tiles</span><span class="item-text"><strong>Tile Svc</strong> serves immutable vector tiles from CDN. 99.8% cache hit rate. Origin: GCS object storage.</span></div>
+      <div class="item-row"><span class="item-label" style="background:#0f1f20;color:#67e8f9">Search</span><span class="item-text"><strong>Search Svc</strong> queries Elasticsearch with S2 cell pre-filtering. 30–50ms for 200M POIs.</span></div>
+      <div class="item-row"><span class="item-label" style="background:#1c0a07;color:#fb923c">Traffic</span><span class="item-text"><strong>Traffic Svc</strong> = Kafka + Dataflow stream processor. GPS probes → map-matched segment speeds → Bigtable. Never stores raw pings.</span></div>
+      <div class="item-row"><span class="item-label" style="background:#062010;color:#4ade80">ETA</span><span class="item-text"><strong>ETA Svc</strong> reads Bigtable for live speeds + historical profiles. Time-dependent CH for departure-time aware routing.</span></div>
+    </div>
+  </div>`
+},
+// Data models
+{
+  act:'Data Models',actColor:'#00b4d8',
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">Data Models</div>
+    <div class="s-title">What goes where — and why.</div>
+    <table class="data-tbl">
+      <thead><tr><th>Data</th><th>Store</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Map tiles</td>
+          <td>GCS + CDN</td>
+          <td>Immutable blobs — CDN caching requires stable version-encoded URLs</td>
+        </tr>
+        <tr>
+          <td>Route graph (CH)</td>
+          <td>RAM (binary file)</td>
+          <td>5–20ms query needs random node access in memory; 8GB fits on one server</td>
+        </tr>
+        <tr>
+          <td>POIs / Places</td>
+          <td>Elasticsearch</td>
+          <td>Combined BM25 text + S2 spatial ranking; 200M docs in 30–50ms</td>
+        </tr>
+        <tr>
+          <td>Segment speeds</td>
+          <td>Bigtable</td>
+          <td>1M+ append writes/min, LSM-tree, time-series access pattern (latest + history)</td>
+        </tr>
+        <tr>
+          <td>Map source data</td>
+          <td>Spanner</td>
+          <td>Globally consistent version promotion needs distributed transactions</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>`
+},
+// Failure modes
+{
+  act:'Failure Modes',actColor:'#00b4d8',
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide">
+    <div class="s-act" style="color:#00b4d8">Failure Modes</div>
+    <div class="s-title">What breaks — and how it recovers.</div>
+    <div class="fail-list">
+      <div class="fail-row">
+        <div class="fail-check">✓</div>
+        <div>
+          <div class="fail-scenario">Routing server crashes</div>
+          <div class="fail-result">CH graph is stateless in RAM. Load balancer removes it in &lt;30s. Other servers absorb load. Autoscaling replaces in 2 min. No shared state — no coordination needed.</div>
+        </div>
+      </div>
+      <div class="fail-row">
+        <div class="fail-check">✓</div>
+        <div>
+          <div class="fail-scenario">Map version update — CDN cache miss storm</div>
+          <div class="fail-result">Stagger version rollout by region (US → EU → APAC, 30 min apart). Pre-warm CDN with top-1M tiles before promoting version token. Old clients continue using old version URLs.</div>
+        </div>
+      </div>
+      <div class="fail-row">
+        <div class="fail-check">✓</div>
+        <div>
+          <div class="fail-scenario">Kafka consumer lag spike (10× probe rate during event)</div>
+          <div class="fail-result">Kafka absorbs burst. Traffic freshness degrades gracefully from 2 min toward 10 min. ETA service widens uncertainty bounds. Autoscaling adds Dataflow workers; backlog drains in ~8 min.</div>
+        </div>
+      </div>
+      <div class="fail-row">
+        <div class="fail-check">✓</div>
+        <div>
+          <div class="fail-scenario">Map build pipeline fails mid-build</div>
+          <div class="fail-result">Version pointer not promoted — users see previous snapshot (15–30 min old). Build retries from checkpoint (idempotent). Previous snapshot retained 24h for instant rollback.</div>
+        </div>
+      </div>
+    </div>
+  </div>`
+},
+// Closing
+{
+  act:'',actColor:'#00b4d8',full:true,
+  map:{show:ALL,active:null,broken:[]},
+  html:`<div class="slide" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:56px 80px;">
+    <div style="max-width:640px;width:100%">
+      <div class="s-act" style="color:#00b4d8;margin-bottom:18px">The Three Hard Problems</div>
+      <div class="closing-items">
+        <div class="closing-item">
+          <div class="closing-n" style="color:#8b5cf6">01</div>
+          <div class="closing-text">
+            <strong>Routing in &lt;200ms on a 100M-node graph</strong>
+            <span>Contraction Hierarchies — offline preprocessing turns a 2-second algorithm into a 5ms one. The structure of real road networks (hierarchical, not random) makes the 1000× speedup possible.</span>
+          </div>
+        </div>
+        <div class="closing-item">
+          <div class="closing-n" style="color:#ef4444">02</div>
+          <div class="closing-text">
+            <strong>1.7M GPS writes/sec without storing raw data</strong>
+            <span>Kafka + stream processing transforms the firehose before it hits storage. HMM map-matching snaps noisy GPS to road segments. Only derived segment speeds are persisted — ~40MB per snapshot instead of 3.5 PB/day.</span>
+          </div>
+        </div>
+        <div class="closing-item">
+          <div class="closing-n" style="color:#f97316">03</div>
+          <div class="closing-text">
+            <strong>Consistent map updates across three derived systems</strong>
+            <span>Immutable versioned snapshots + atomic version promotion. Build tiles, CH graph, and search index in parallel against the new snapshot. Promote only when all three are ready. Users never see routing use a road tiles show as closed.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`
+},
+];
+
+// ── RENDERER ──────────────────────────────────────────────────────────────────
+const mount  = document.getElementById('slide-mount');
+const cpanel = document.getElementById('content-panel');
+const mpanel = document.getElementById('map-panel');
+let cur = 0;
+
+function goTo(n){
+  if(n<0||n>=SLIDES.length) return;
+  const s=SLIDES[n];
+
+  const old = mount.querySelector('.slide.active');
+  if(old){ old.classList.add('exit'); setTimeout(()=>old.remove(),380); }
+  const wrap=document.createElement('div');
+  wrap.innerHTML=s.html;
+  const el=wrap.firstChild;
+  el.classList.add('active');
+  mount.appendChild(el);
+
+  if(s.full){ cpanel.classList.add('full'); mpanel.classList.add('hidden'); }
+  else       { cpanel.classList.remove('full'); mpanel.classList.remove('hidden'); }
+
+  updateMap(s.map);
+
+  const ac=s.actColor||'#00b4d8';
+  document.getElementById('act-dot').style.background=ac;
+  document.getElementById('act-label').style.color=ac;
+  document.getElementById('act-label').textContent=s.act||'';
+  document.getElementById('slide-num').textContent=`${n+1} / ${SLIDES.length}`;
+  document.getElementById('progress').style.width=`${(n+1)/SLIDES.length*100}%`;
+  document.getElementById('progress').style.background=ac;
+  document.getElementById('leg-active').querySelector('.leg-dot').style.background=ac;
+
+  cur=n;
+}
+
+goTo(0);
+
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'||e.key==='Enter'){ e.preventDefault(); goTo(cur+1); }
+  if(e.key==='ArrowLeft')                  { e.preventDefault(); goTo(cur-1); }
+});
+document.getElementById('stage').addEventListener('click',e=>{
+  e.clientX/window.innerWidth>0.18 ? goTo(cur+1) : goTo(cur-1);
+});
+</script>
+</body>
+</html>

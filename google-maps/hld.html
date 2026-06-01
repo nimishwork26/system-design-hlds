@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Google Maps — High Level Design</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({ startOnLoad: true, theme: 'dark', themeVariables: {
+    background: '#1a1d27', primaryColor: '#1e3a5f', primaryTextColor: '#e2e8f0',
+    primaryBorderColor: '#2e3354', lineColor: '#4a5580', secondaryColor: '#22263a'
+  }});</script>
+  <style>
+    :root { --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3354;
+            --accent:#00b4d8; --text:#e2e8f0; --muted:#8892b0; }
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:15px;line-height:1.75;}
+    code{background:var(--surface2);color:#7dd3fc;padding:1px 6px;border-radius:4px;font-size:13px;font-family:monospace;}
+    pre{font-family:monospace;font-size:12.5px;color:#7dd3fc;background:var(--surface2);padding:14px;border-radius:8px;overflow-x:auto;margin:8px 0;line-height:1.6;}
+    ul,ol{color:var(--muted);font-size:14px;padding-left:20px;}
+    li{margin-bottom:4px;} li strong{color:var(--text);}
+    .layout{display:flex;min-height:100vh;}
+    nav{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);padding:20px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;}
+    main{flex:1;padding:44px 54px;max-width:920px;}
+    .nav-logo{font-size:16px;font-weight:700;color:var(--accent);margin-bottom:3px;}
+    .nav-sub{font-size:10px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.08em;}
+    .nav-links{display:flex;flex-direction:column;gap:6px;margin-bottom:18px;}
+    .nav-link{display:block;padding:5px 10px;border-radius:6px;color:#a78bfa;font-size:12px;text-decoration:none;border:1px solid #3b1f6e;background:#1e1635;text-align:center;}
+    .nav-link:hover{background:#2a1a4a;}
+    .nav-sec{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 4px;}
+    nav ul{list-style:none;padding:0;}
+    nav ul li a{display:block;padding:5px 10px;border-radius:6px;color:var(--muted);font-size:12.5px;text-decoration:none;transition:background .15s,color .15s;}
+    nav ul li a:hover,nav ul li a.active{background:var(--surface2);color:var(--text);}
+    section{margin-bottom:60px;}
+    h1{font-size:28px;font-weight:700;color:#fff;margin-bottom:4px;}
+    h2{font-size:19px;font-weight:600;color:var(--accent);margin-bottom:14px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+    h3{font-size:15px;font-weight:600;color:#c3cfe2;margin:20px 0 8px;}
+    p{color:var(--muted);margin-bottom:10px;} p strong{color:var(--text);}
+    .hero{margin-bottom:44px;padding-bottom:28px;border-bottom:1px solid var(--border);}
+    .hero-meta{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;}
+    .badge{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:3px 11px;font-size:12px;color:var(--muted);}
+    .tags{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0;}
+    .tag{background:#1e3a5f;color:#93c5fd;border-radius:999px;padding:2px 11px;font-size:12px;}
+    .tag.orange{background:#431407;color:#fdba74;}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:12px;}
+    .card-title{font-size:13.5px;font-weight:600;color:var(--text);margin-bottom:6px;}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;}
+    .problem{border-left:3px solid #ef4444;background:rgba(239,68,68,.06);border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;}
+    .problem-label{font-size:10px;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+    .problem p{color:#fca5a5;margin:0;font-size:14px;}
+    .decision{border-left:3px solid #16a34a;background:rgba(22,163,74,.07);border-radius:0 8px 8px 0;padding:12px 16px;margin:16px 0;}
+    .decision-label{font-size:10px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+    .decision p{color:#86efac;margin:0;font-size:14px;}
+    .options{display:flex;flex-direction:column;gap:8px;margin:12px 0;}
+    .opt{display:flex;gap:14px;align-items:flex-start;padding:12px 16px;border-radius:8px;border:1px solid var(--border);}
+    .opt.no{border-color:#450a0a;background:rgba(220,38,38,.05);}
+    .opt.maybe{border-color:#1c3020;background:rgba(22,163,74,.04);}
+    .opt.yes{border-color:#1e1060;background:rgba(99,102,241,.07);}
+    .opt-pill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:2px 9px;border-radius:4px;white-space:nowrap;flex-shrink:0;margin-top:3px;}
+    .no .opt-pill{background:#450a0a;color:#fca5a5;}
+    .maybe .opt-pill{background:#14532d;color:#86efac;}
+    .yes .opt-pill{background:#2e1065;color:#c4b5fd;}
+    .opt-body{font-size:13.5px;color:var(--muted);} .opt-body strong{color:var(--text);}
+    .insight-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+    .ins-col{border-radius:8px;padding:14px 16px;}
+    .ins-col.bad{background:#120606;border:1px solid #3a1010;}
+    .ins-col.good{background:#060e06;border:1px solid #0e3010;}
+    .ins-head{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+    .ins-col.bad .ins-head{color:#ef4444;} .ins-col.good .ins-head{color:#16a34a;}
+    .ins-col p{font-size:13.5px;line-height:1.6;color:var(--muted);}
+    .ins-col p strong{color:var(--text);}
+    .observe{border-left:3px solid var(--accent);background:rgba(0,180,216,.06);border-radius:0 8px 8px 0;padding:10px 14px;margin:14px 0;font-size:13.5px;color:var(--muted);}
+    .observe strong{color:var(--accent);}
+    .observe.warn{border-color:#d97706;background:rgba(217,119,6,.06);} .observe.warn strong{color:#fbbf24;}
+    .flow{display:flex;flex-direction:column;gap:0;margin:14px 0;}
+    .flow-step{display:flex;align-items:flex-start;gap:14px;position:relative;padding-bottom:16px;}
+    .flow-step:last-child{padding-bottom:0;}
+    .flow-step::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--border);}
+    .flow-step:last-child::before{display:none;}
+    .step-num{width:30px;height:30px;border-radius:50%;background:#7c3aed;color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+    .step-body{padding-top:4px;}
+    .step-title{font-weight:600;color:var(--text);font-size:13.5px;}
+    .step-desc{color:var(--muted);font-size:13px;margin-top:2px;}
+    .mermaid-wrap{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin:18px 0;overflow-x:auto;display:flex;justify-content:center;}
+    table.t{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;}
+    table.t th{padding:8px 12px;background:var(--surface2);color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;text-align:left;}
+    table.t td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--text);}
+    table.t tr:last-child td{border-bottom:none;}
+    .num{color:var(--accent);font-weight:700;}
+    .tip{background:#1c1435;border:1px solid #3b1f6e;border-radius:8px;padding:12px 16px;margin:14px 0;}
+    .tip-label{font-size:10px;color:#a78bfa;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+    .tip p{color:#c4b5fd;margin:0;font-size:13.5px;}
+    ::-webkit-scrollbar{width:5px;height:5px;} ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+  </style>
+</head>
+<body>
+<div class="layout">
+<nav>
+  <div class="nav-logo">Google Maps HLD</div>
+  <div class="nav-sub">System Design Interview</div>
+  <div class="nav-links">
+    <a href="slideshow.html" class="nav-link">Slideshow ↗</a>
+  </div>
+  <div class="nav-sec">Design Flow</div>
+  <ul>
+    <li><a href="#requirements">1. Requirements</a></li>
+    <li><a href="#capacity">2. Capacity</a></li>
+    <li><a href="#naive">3. Naive Design</a></li>
+    <li><a href="#routing">4. Routing Speed</a></li>
+    <li><a href="#tiles">5. Tile Serving</a></li>
+    <li><a href="#traffic">6. Real-time Traffic</a></li>
+    <li><a href="#search">7. Location Search</a></li>
+    <li><a href="#updates">8. Map Data Updates</a></li>
+    <li><a href="#api">9. API Design</a></li>
+    <li><a href="#architecture">10. Final Architecture</a></li>
+    <li><a href="#datamodels">11. Data Models</a></li>
+    <li><a href="#failure">12. Failure &amp; Scale</a></li>
+  </ul>
+</nav>
+<main>
+
+  <div class="hero">
+    <h1>Google Maps</h1>
+    <p>A global mapping platform serving 1B+ users — turn-by-turn routing, real-time traffic, map tile serving, and location search at planetary scale.</p>
+    <div class="hero-meta">
+      <span class="badge">1B+ monthly users</span>
+      <span class="badge">~5B tile requests/day</span>
+      <span class="badge">Route latency &lt;200ms</span>
+      <span class="badge">100M+ GPS probes/min</span>
+    </div>
+    <div class="tags">
+      <span class="tag">Graph Algorithms</span>
+      <span class="tag">Spatial Indexing</span>
+      <span class="tag">CDN &amp; Caching</span>
+      <span class="tag">Stream Processing</span>
+      <span class="tag orange">Hard: routing on 100M-node graph in &lt;200ms</span>
+    </div>
+  </div>
+
+  <!-- 1. REQUIREMENTS -->
+  <section id="requirements">
+    <h2>1. Requirements</h2>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Functional</div>
+        <ul>
+          <li><strong>Map tile display</strong> — render any location at any zoom level</li>
+          <li><strong>Location search</strong> — find places by name or category near a point</li>
+          <li><strong>Turn-by-turn directions</strong> — driving, walking, transit between two points</li>
+          <li><strong>ETA</strong> — estimated arrival time accounting for current traffic</li>
+          <li><strong>Live traffic overlay</strong> — see real-time congestion on the map</li>
+          <li><strong>Route recalculation</strong> — re-route when user deviates</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">Non-Functional</div>
+        <ul>
+          <li><strong>Route calculation &lt;200ms</strong> p99 globally</li>
+          <li><strong>Tile serve &lt;50ms</strong> for cached tiles</li>
+          <li><strong>Traffic freshness &lt;5 min</strong> lag end-to-end</li>
+          <li><strong>99.99% availability</strong> (4.3 min downtime/month)</li>
+          <li><strong>Eventual consistency</strong> for traffic; strong consistency for route existence (no routing over closed roads)</li>
+        </ul>
+        <div class="card-title" style="margin-top:12px;">Out of Scope</div>
+        <ul>
+          <li>Street View imagery pipeline</li>
+          <li>Transit schedule management</li>
+          <li>Business listing / Google Places backend</li>
+          <li>Satellite / aerial imagery processing</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. CAPACITY -->
+  <section id="capacity">
+    <h2>2. Capacity</h2>
+    <table class="t">
+      <thead><tr><th>Metric</th><th>Number</th><th>Why It Matters</th></tr></thead>
+      <tbody>
+        <tr><td>Monthly active users</td><td class="num">~1 billion</td><td>Defines the baseline for all services</td></tr>
+        <tr><td>Daily tile requests</td><td class="num">~5 billion</td><td>~58K req/sec peak — CDN hit rate is everything</td></tr>
+        <tr><td>GPS probes per minute</td><td class="num">~100 million</td><td>~1.7M writes/sec — impossible to store raw</td></tr>
+        <tr><td>Route calculations per day</td><td class="num">~500 million</td><td>~5,800/sec — routing graph must fit in RAM</td></tr>
+        <tr><td>Road network nodes (global)</td><td class="num">~100 million</td><td>Dijkstra takes ~2s. Need 400× speedup.</td></tr>
+        <tr><td>Map data changes per day</td><td class="num">~25 million</td><td>Cascades to tiles, graph, and search index</td></tr>
+        <tr><td>POIs in search index</td><td class="num">~200 million</td><td>Geocoding needs fuzzy text + spatial together</td></tr>
+      </tbody>
+    </table>
+    <div class="observe">
+      <strong>The hardest number:</strong> 100M road network nodes × Dijkstra's O(V log V + E) = ~2 seconds per route query. At 5,800 routes/second that's 11,600 dedicated CPU cores — and still 10× too slow. Every routing architectural decision below exists to solve this single number.
+    </div>
+  </section>
+
+  <!-- 3. NAIVE DESIGN -->
+  <section id="naive">
+    <h2>3. Naive Design</h2>
+    <p>Start with the simplest possible system: one API server backed by a map database. The server runs Dijkstra for routing, queries the DB for search, and renders tiles on demand from raw geometry data.</p>
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart LR
+    User["User"] --> Server["API Server"]
+    Server --> MapDB["Map Database<br/>(roads, POIs, geometry)"]
+      </div>
+    </div>
+    <p>This works in development. Here's where it fails at production scale:</p>
+    <div class="grid2" style="margin-top:14px;">
+      <div class="card"><div class="card-title" style="color:#ef4444">Break 1 — Routing is 10× too slow</div><p style="font-size:13px;">Dijkstra on 100M nodes = ~2s. Need &lt;200ms. Can't just add servers — it's algorithmic.</p></div>
+      <div class="card"><div class="card-title" style="color:#ef4444">Break 2 — Can't render tiles on demand</div><p style="font-size:13px;">Tile rendering takes 50–200ms. 58K req/sec = 5,800 dedicated render threads. Latency before the tile even leaves the datacenter.</p></div>
+      <div class="card"><div class="card-title" style="color:#ef4444">Break 3 — Traffic data is a firehose</div><p style="font-size:13px;">100M GPS probes/min. Any DB that stores raw pings requires 3.5 PB/day of storage.</p></div>
+      <div class="card"><div class="card-title" style="color:#ef4444">Break 4 — Search needs two indexes at once</div><p style="font-size:13px;">"Coffee near me" needs text relevance AND spatial proximity. SQL can't rank by both simultaneously.</p></div>
+      <div class="card"><div class="card-title" style="color:#ef4444">Break 5 — Map updates cascade everywhere</div><p style="font-size:13px;">A new road affects tiles, the routing graph, and the search index. Synchronous updates across all three take hours.</p></div>
+    </div>
+  </section>
+
+  <!-- 4. ROUTING -->
+  <section id="routing">
+    <h2>4. Routing Speed</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>The global road network has ~100 million nodes and ~200 million edges. Dijkstra's algorithm runs in O(V log V + E) — roughly 2 seconds per route query on modern hardware. With 5,800 routes/second, that's 11,600 CPU cores needed — and the latency still misses the 200ms SLA by 10×.</p>
+    </div>
+
+    <h3>What are the options?</h3>
+    <div class="options">
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>Standard Dijkstra</strong> — Guaranteed optimal path, simple to implement, well-understood. Every CS graduate can reason about it.<br><br>
+          Visits every node in the shortest-path tree before finding the destination. On 100M nodes, that's ~2 seconds even on a 2024 server. At 5,800 concurrent queries, the math doesn't close.
+        </div>
+      </div>
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>A* with straight-line distance heuristic</strong> — Guides the search toward the destination using geographic distance as a lower-bound estimate. Gives a 2–4× speedup over Dijkstra in practice.<br><br>
+          Still visits millions of nodes for cross-city or cross-country routes. NYC → LA via A*: still ~800ms. We need 200ms.
+        </div>
+      </div>
+      <div class="opt maybe">
+        <span class="opt-pill">Partial</span>
+        <div class="opt-body">
+          <strong>Bidirectional A*</strong> — Run search simultaneously from source and destination; stop when the two frontiers meet. Reduces explored nodes by ~75%, reaching ~500ms for long routes.<br><br>
+          Better, but still misses the SLA for global routes. Correctness is also tricky: the meeting criterion for bidirectional search requires careful handling to guarantee optimality.
+        </div>
+      </div>
+      <div class="opt yes">
+        <span class="opt-pill">Decision</span>
+        <div class="opt-body">
+          <strong>Contraction Hierarchies (CH)</strong> — An offline preprocessing step that assigns an "importance" rank to every node (highways are important; residential cul-de-sacs are not). Low-importance nodes are "contracted" — removed from the graph and replaced with shortcut edges. At query time, bidirectional search only travels <em>upward</em> through importance levels, exploring ~5,000 nodes instead of 50 million. Result: <strong>5–20ms per route</strong>, a ~1000× speedup over Dijkstra.
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Decision</div>
+      <p>Build a Contraction Hierarchy in an offline preprocessing phase (~4 hours for the global graph). The augmented graph is serialized into a custom binary format (~8GB) and loaded into RAM on every routing server at startup. Route queries run bidirectional upward search on this augmented graph in 5–20ms. The preprocessing is re-run whenever the road network changes significantly (daily for minor updates, weekly for full global rebuilds).</p>
+    </div>
+
+    <div class="observe">
+      <strong>The aha moment:</strong> CH works because real road networks have natural hierarchies — most long trips eventually use highways or major arterials. Contracting a cul-de-sac adds exactly one shortcut edge (its two neighbors become directly connected) and removes that node from all future queries. After contracting the bottom 90% of nodes by importance, the remaining query graph is tiny. The structure of actual roads is what makes the 1000× gain possible.
+    </div>
+
+    <h3>CH Preprocessing pipeline</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">Assign importance scores</div>
+          <div class="step-desc">Score each node by: edge difference (shortcuts needed minus edges removed), road hierarchy level (motorway &gt; residential), and contractor neighbor count. Lower score = contracts first.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Contract nodes in ascending importance order</div>
+          <div class="step-desc">Remove least-important node. For every pair of its neighbors (u, v), if the path through this node is a unique shortest path, add a shortcut edge u→v with combined weight. Mark node as contracted.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Serialize augmented graph</div>
+          <div class="step-desc">Binary format: node_id → {level, lat, lng, outgoing_edges[]}. ~8GB for global network. Loaded at startup in ~45 seconds. Held in RAM on all routing servers.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Query: bidirectional upward search</div>
+          <div class="step-desc">From source and destination, only relax edges going to higher-importance nodes. When both frontiers have settled the same top node, extract the path. ~5,000 nodes explored vs 50M for plain Dijkstra.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. TILES -->
+  <section id="tiles">
+    <h2>5. Map Tile Serving</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>Rendering a single map tile from raw vector geometry takes 50–200ms of CPU time. Google Maps sees ~58,000 tile requests per second at peak. On-demand rendering would require ~5,800 dedicated render server cores just to handle throughput — and p99 tile latency would be 200ms+ before the response even starts transmitting.</p>
+    </div>
+
+    <div class="options">
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>On-demand rendering</strong> — Always shows the freshest map data; zero storage overhead; supports infinite style variations (dark mode, accessibility themes).<br><br>
+          At 58K req/sec and 100ms render time, we need 5,800 concurrent render threads. CPU cost is prohibitive. More critically, tile latency at p99 would be 200ms+ before the payload even starts transmitting — CDN edge nodes would see nothing to cache.
+        </div>
+      </div>
+      <div class="opt maybe">
+        <span class="opt-pill">Partial</span>
+        <div class="opt-body">
+          <strong>On-demand rendering + aggressive caching (Varnish/Redis)</strong> — Cache rendered tiles by (x, y, zoom, style) key. Downtown Manhattan at zoom 15 gets served from cache 99% of the time.<br><br>
+          The long tail is enormous: Earth at zoom level 20 has 274 trillion possible tile positions. Cold-cache penalty is 100–200ms. Worse: cache invalidation when map data changes (road renamed, new building) requires identifying and purging thousands of affected tiles across potentially hundreds of CDN PoPs simultaneously.
+        </div>
+      </div>
+      <div class="opt yes">
+        <span class="opt-pill">Decision</span>
+        <div class="opt-body">
+          <strong>Pre-render all tiles at build time + global CDN</strong> — During the map data build pipeline, pre-render every non-empty tile at every zoom level (0–20). Store in distributed object storage (Google Cloud Storage). Tiles are immutable — addressed by <code>/v{map_version}/{zoom}/{x}/{y}.pbf</code>. When map changes, a new version is generated; CDN cache keys change atomically with the version bump. Old tiles remain cached for clients still on the prior version.
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Decision</div>
+      <p>Pre-render tiles during the versioned map build. At zoom 0–15, the total non-empty tile count is ~340M — about 170GB as compressed vector tiles. Higher zoom levels are ~99% empty (ocean, ice, desert) and rendered sparsely. Global CDN achieves 99.8%+ cache hit rate, meaning only ~116 tile requests/second ever touch origin servers. New version promotion is instantaneous from the user's perspective — clients request tiles with the new version token once their app refreshes.</p>
+    </div>
+
+    <div class="tip">
+      <div class="tip-label">Vector Tiles vs Raster</div>
+      <p>Google serves <strong>vector tiles</strong> (.pbf — Protocol Buffer format) rather than PNG images. The client renders them locally in WebGL/Metal. Benefits: 10× smaller storage, smooth zoom transitions without re-requesting tiles, dynamic style application (dark mode, accessibility) without new round trips, and text/labels rendered in the client's locale. The server never knows what the rendered tile looks like — only the geometry data.</p>
+    </div>
+
+    <h3>Storage math</h3>
+    <table class="t">
+      <thead><tr><th>Zoom range</th><th>Tile count</th><th>Raster size (@5KB)</th><th>Vector size (@0.5KB)</th></tr></thead>
+      <tbody>
+        <tr><td>0–10 (global overview)</td><td class="num">1.4M</td><td>7 GB</td><td>700 MB</td></tr>
+        <tr><td>11–15 (city level)</td><td class="num">340M</td><td>1.7 TB</td><td>170 GB</td></tr>
+        <tr><td>16–20 (street level, sparse)</td><td class="num">~1% of 274T</td><td>~8 TB</td><td>~800 GB</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 6. TRAFFIC -->
+  <section id="traffic">
+    <h2>6. Real-time Traffic</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>Google Maps collects anonymous GPS probes from ~1 billion Android devices. At just 10% reporting rate in navigation mode, that's ~100 million pings per minute = ~1.7 million writes per second. Storing raw GPS data is physically impossible: 24 bytes/ping × 100M/min × 1440 min/day = 3.5 PB/day. Yet we need traffic data fresh enough to give accurate ETAs.</p>
+    </div>
+
+    <div class="options">
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>Store all raw GPS pings in a database</strong> — Complete audit trail; enables ML training on raw traces; allows future replay for any traffic question.<br><br>
+          At 1.7M writes/sec, no off-the-shelf database handles this rate. Even Cassandra (optimized for writes) at 100K writes/sec per node requires 17 nodes just for ingestion. Storage: 3.5 PB/day, or $1M+/day in cloud object storage at list prices. Aggregating segment speeds from raw pings at query time would take minutes.
+        </div>
+      </div>
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>Random sampling — store only 1% of probes</strong> — Reduces write volume 100× to ~17K writes/sec. Manageable with a standard database.<br><br>
+          Works on major highways with thousands of probes per minute. Catastrophically fails on less-traveled roads: a 3-car accident on a side street may generate only 2–3 probes per minute — 1% sampling means 0 data points. Traffic quality degrades exactly where incidents matter most.
+        </div>
+      </div>
+      <div class="opt yes">
+        <span class="opt-pill">Decision</span>
+        <div class="opt-body">
+          <strong>Full ingestion → stream processing → aggregate to road segments</strong> — Kafka absorbs all probes at full rate (~1.7M/sec). A fleet of stream processors (Dataflow/Flink) map-match each probe to a road segment and compute per-segment average speeds over rolling 5-minute windows. Only the derived segment speeds (~10M segments × one float = 40MB per snapshot) are persisted to Bigtable. Raw pings never touch persistent storage.
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Decision</div>
+      <p>Kafka partitioned by geographic tile absorbs the firehose. Stream processors run Hidden Markov Model map-matching — snapping noisy GPS coordinates (±5–20m error) to the most likely sequence of road segments. Per-segment median speeds are computed in 5-minute sliding windows and written to Bigtable with key <code>segment_id#timestamp</code>. Traffic is fresh within 2–3 minutes of real-world conditions. Raw pings are never stored; the entire pipeline operates as a stateless transformation.</p>
+    </div>
+
+    <div class="observe warn">
+      <strong>Map-matching is non-trivial:</strong> GPS accuracy is ±5–20m — enough to misidentify the road on parallel streets, near multi-level interchanges, or inside tunnels. A Hidden Markov Model treats map-matching as a sequence problem: given a sequence of noisy GPS points, find the most likely sequence of road segments, considering both point-to-road distance and transition probabilities between adjacent segments. Without HMM, ~15% of pings would be assigned to the wrong road segment, corrupting speed estimates.
+    </div>
+
+    <h3>Traffic pipeline</h3>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-title">GPS probe emitted</div>
+          <div class="step-desc">Android device in navigation mode sends (lat, lng, speed, bearing, timestamp) every 5–30 seconds. Anonymized before transmission. Bundled with other telemetry to minimize battery drain.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-title">Kafka ingestion</div>
+          <div class="step-desc">Published to a Kafka topic partitioned by geographic tile (S2 cell). Ensures probes for the same road segment go to the same consumer partition — locality reduces cross-partition joins during map-matching.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-title">Map-matching (HMM)</div>
+          <div class="step-desc">Stream processor (Dataflow) assigns each probe to the most likely road segment using a Hidden Markov Model. Handles GPS noise, tunnel gaps, and multi-level roads (overpass vs underpass).</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <div class="step-title">Speed aggregation</div>
+          <div class="step-desc">Per-segment median speed computed over a 5-minute sliding window. Statistical outliers filtered. Result: ~10M (segment_id, speed_mph, confidence) records per snapshot.</div>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="step-num">5</div>
+        <div class="step-body">
+          <div class="step-title">Write to Bigtable + inject into routing</div>
+          <div class="step-desc">Segment speeds written to Bigtable for historical analysis. Also hot-patched into the in-memory routing graph as time-dependent edge weights. ETA service reads Bigtable for its ML model features.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7. SEARCH -->
+  <section id="search">
+    <h2>7. Location Search (Geocoding)</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>"Coffee shops near Union Square" requires <strong>text relevance</strong> (is this a coffee shop?) and <strong>spatial proximity</strong> (is it near Union Square?) simultaneously. A standard inverted text index ranks by text score and can't efficiently pre-filter by geography. A spatial index filters by distance but can't rank by text relevance. Combining both in SQL — even with PostGIS — produces plans that degrade to full scans at 200M POIs.</p>
+    </div>
+
+    <div class="options">
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>SQL full-text search + PostGIS spatial filter</strong> — Single system, familiar tooling, ACID transactions for POI data updates. PostgreSQL can do <code>tsvector</code> full-text search AND <code>ST_DWithin</code> with a GiST spatial index.<br><br>
+          At 200M POIs, combining tsvector ranking with spatial filtering creates a query planner nightmare. Postgres must choose between the spatial index (good for tight radii) or the text index (good for rare terms) — it can't efficiently use both simultaneously. Query times at 200M rows: 500ms+. Under write load (25M map updates/day), index maintenance degrades query performance further.
+        </div>
+      </div>
+      <div class="opt maybe">
+        <span class="opt-pill">Partial</span>
+        <div class="opt-body">
+          <strong>Elasticsearch with geo_distance filter</strong> — Excellent BM25 text scoring + geo_distance post-filter. Industry-standard approach for search-with-location. Scales to hundreds of millions of documents.<br><br>
+          <code>geo_distance</code> is a post-filter: Elasticsearch first retrieves all text matches (potentially 10M "coffee" results globally), then filters by radius. For broad category searches, this is extremely expensive. Can't efficiently handle "within this polygon" queries (city boundaries, neighborhoods) — geo_shape queries require heavy computation.
+        </div>
+      </div>
+      <div class="opt yes">
+        <span class="opt-pill">Decision</span>
+        <div class="opt-body">
+          <strong>Elasticsearch + S2 cell index tokens</strong> — Each POI is indexed with its S2 cell token at multiple levels (coarse city → fine block). Spatial pre-filtering is a prefix scan on S2 cell IDs — a near-O(1) Lucene term lookup, not a bounding-box computation. Combined with BM25 text scoring and distance-decay function scoring. End-to-end: 30–50ms for 200M POIs.
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Decision</div>
+      <p>Every POI is indexed in Elasticsearch with: (1) text fields (name, category, address) for BM25 ranking, (2) a <code>geo_point</code> field for distance-decay scoring, (3) S2 cell tokens at levels 10–15 as keyword fields for instant spatial pre-filtering. A search query first issues a terms query on S2 cell tokens covering the search radius — this reduces 200M POIs to ~10K candidates in sub-millisecond time. BM25 text scoring runs on just those 10K candidates. Final ranking combines text relevance + distance decay. Geocoding (address → lat/lng) uses a separate structured address trie.</p>
+    </div>
+
+    <div class="observe">
+      <strong>S2 cells:</strong> Google's S2 geometry library maps Earth's surface onto a space-filling Hilbert curve, creating a hierarchy of square cells at 31 levels of precision. Adjacent cells have numerically adjacent IDs, so a geographic area translates to a set of cell ID ranges — a prefix scan in Lucene. Level 10 ≈ city district (1.27 km²), Level 13 ≈ neighborhood block (153 m²). Indexing each POI at 4–5 levels covers both broad and narrow search radii without re-indexing.
+    </div>
+  </section>
+
+  <!-- 8. MAP UPDATES -->
+  <section id="updates">
+    <h2>8. Map Data Updates</h2>
+
+    <div class="problem">
+      <div class="problem-label">The Problem</div>
+      <p>Google processes ~25 million map changes per day — new roads, closures, speed limit changes, business openings. Each change requires updates to three separate derived systems with different rebuild times: tile re-rendering (hours for a major area), CH graph rebuild (4 hours globally), and Elasticsearch index update (minutes). Synchronous all-or-nothing updates block serving. Independent async updates create dangerous inconsistencies — routing over a road the tile shows as closed.</p>
+    </div>
+
+    <div class="options">
+      <div class="opt no">
+        <span class="opt-pill">Fails</span>
+        <div class="opt-body">
+          <strong>Synchronous update across all three systems</strong> — Strong consistency; users never see a discrepancy between the map, routing, and search.<br><br>
+          Tile re-rendering for a major road change affects thousands of tiles at multiple zoom levels: hours of processing. Routing graph rebuild: 4 hours. During this window, the entire map serving would be blocked. Any failure in one system rolls back all three. Completely incompatible with 99.99% availability SLA.
+        </div>
+      </div>
+      <div class="opt maybe">
+        <span class="opt-pill">Partial</span>
+        <div class="opt-body">
+          <strong>Each service subscribes independently to a change feed</strong> — Tiles, routing, and search each consume a Pub/Sub change log and update themselves asynchronously. No blocking. Each service is independently available.<br><br>
+          Creates temporary windows where routing navigates over a road the tile shows as closed (or vice versa). In the worst case, a user is directed down a road that visually appears blocked. The inconsistency window can last hours if the tile rebuild is delayed. User-visible and potentially dangerous.
+        </div>
+      </div>
+      <div class="opt yes">
+        <span class="opt-pill">Decision</span>
+        <div class="opt-body">
+          <strong>Immutable versioned map snapshots with atomic version promotion</strong> — Map data is versioned (v1001, v1002, ...). A build pipeline assembles a new snapshot from batched changes, then builds all three derived systems (tiles, CH graph, Elasticsearch index) against that snapshot in parallel. A single atomic version pointer is promoted only after all three are ready. All serving systems switch to the new version simultaneously.
+        </div>
+      </div>
+    </div>
+
+    <div class="decision">
+      <div class="decision-label">Decision</div>
+      <p>Map source data is stored in Spanner as immutable versioned rows. The build pipeline runs continuously, batching changes into new snapshots every ~15 minutes. Tiles, graph, and index are rebuilt against the new snapshot in parallel. A version gate in the serving layer — a single Spanner read of the <code>current_version</code> row — atomically switches all three when the build completes. Old snapshots are retained for 24 hours for instant rollback. Emergency road closures use a fast-path: direct hot-patch to the live routing graph (infinite edge weight for closed road) + immediate traffic pipeline update, while the full rebuild completes asynchronously.</p>
+    </div>
+
+    <div class="observe warn">
+      <strong>Not perfectly real-time:</strong> The versioned snapshot approach means confirmed map changes go live 15–30 minutes later. This is acceptable for most changes. The emergency hot-patch path covers time-sensitive closures. Traffic-driven tile overlays (congestion coloring) update within 2–3 minutes via the stream processing pipeline, independent of the snapshot cycle.
+    </div>
+  </section>
+
+  <!-- 9. API DESIGN -->
+  <section id="api">
+    <h2>9. API Design</h2>
+    <p>Only the non-obvious endpoints — the ones where the design choice requires explanation.</p>
+
+    <h3>Route calculation</h3>
+    <pre>GET /v1/directions
+  origin=37.7749,-122.4194        // or place_id:ChIJ...
+  destination=34.0522,-118.2437
+  mode=driving|walking|transit
+  departure_time=1735000000       // unix timestamp — enables predictive ETA
+  alternatives=true               // return up to 3 routes</pre>
+    <div class="observe">
+      <strong>Why <code>departure_time</code>?</strong> Traffic patterns vary by hour and day. A Monday 8am route differs significantly from a Sunday 2pm route. The routing engine uses historical traffic profiles (built from 90 days of segment-speed history) to assign time-dependent edge weights. Specifying <code>departure_time</code> in the future enables planning ("leave in 2 hours") with historically-accurate ETAs — not just current congestion.
+    </div>
+
+    <h3>Tile serving</h3>
+    <pre>GET /maps/vt
+  x={tile_x}&y={tile_y}&z={zoom}
+  v={map_version}                  // enables aggressive CDN caching
+  style={style_id}                 // dark, satellite, accessibility
+  lang={locale}                    // label language (rendered client-side for vector)</pre>
+    <div class="observe">
+      <strong>Why include the map version in the URL?</strong> Tile URLs are immutable — same URL always returns the same bytes. This allows <code>Cache-Control: max-age=86400, immutable</code> with no stale-data risk. When the map version changes, new URLs are used. Old tiles remain valid for clients that haven't refreshed their version token yet, so there's no thundering herd on version promotion.
+    </div>
+
+    <h3>Location search</h3>
+    <pre>GET /v1/place/search
+  query=coffee
+  location=37.7749,-122.4194      // anchor point for S2 cell selection
+  radius=2000                      // meters → maps to S2 level
+  max_results=20
+  page_token=eyJ...               // cursor-based, not offset — consistent under writes</pre>
+    <div class="observe">
+      <strong>Why cursor-based pagination?</strong> Offset-based pagination (<code>page=2&size=20</code>) is unstable under concurrent writes to the POI index: a new business indexed between page 1 and page 2 requests causes a result to appear on both pages. A cursor encodes the last-seen document ID, ensuring consistent pagination regardless of concurrent index changes.
+    </div>
+
+    <h3>ETA (lightweight routing)</h3>
+    <pre>GET /v1/eta
+  origin=37.7749,-122.4194
+  destination=34.0522,-118.2437
+  departure_time=1735000000</pre>
+    <div class="observe">
+      <strong>ETA vs full directions:</strong> ETA is a lighter call — it runs CH routing but skips the path reconstruction step (building the turn-by-turn polyline). This matters because ride-hailing and delivery apps call ETA for every driver-to-destination pair (O(drivers × destinations)), while users call full directions only once per trip. Omitting polyline serialization cuts response time and payload size by ~40%.
+    </div>
+  </section>
+
+  <!-- 10. FINAL ARCHITECTURE -->
+  <section id="architecture">
+    <h2>10. Final Architecture</h2>
+    <div class="mermaid-wrap">
+      <div class="mermaid">
+flowchart LR
+    Client["Mobile / Browser"] --> GW["API Gateway"]
+    GW --> TileSvc["Tile Service"]
+    GW --> RouteSvc["Routing Service<br/>(CH in RAM)"]
+    GW --> SearchSvc["Search Service"]
+    GW --> ETASvc["ETA Service"]
+    TileSvc --> CDN["CDN + GCS<br/>(pre-rendered tiles)"]
+    RouteSvc --> Graph["Route Graph<br/>(CH binary, ~8GB)"]
+    SearchSvc --> ES["Elasticsearch<br/>+ S2 index"]
+    ETASvc --> BT["Bigtable<br/>(segment speeds)"]
+    ETASvc --> Graph
+    Probes["GPS Probes<br/>(Android)"] --> Kafka["Kafka"]
+    Kafka --> SP["Stream Processor<br/>(map-match + agg)"]
+    SP --> BT
+    MapBuild["Map Build<br/>Pipeline"] --> CDN
+    MapBuild --> Graph
+    MapBuild --> ES
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. DATA MODELS -->
+  <section id="datamodels">
+    <h2>11. Data Models</h2>
+    <table class="t">
+      <thead><tr><th>Data</th><th>Store</th><th>Key Schema</th><th>Why This Store</th></tr></thead>
+      <tbody>
+        <tr>
+          <td><strong>Map tiles</strong></td>
+          <td>GCS + CDN</td>
+          <td><code>/v{version}/{zoom}/{x}/{y}.pbf</code></td>
+          <td>Immutable blobs — CDN caching requires stable, version-encoded keys. GCS handles petabyte-scale storage with 11-nines durability.</td>
+        </tr>
+        <tr>
+          <td><strong>CH route graph</strong></td>
+          <td>Custom binary in RAM</td>
+          <td><code>node_id → {level, lat, lng, edges[]}</code></td>
+          <td>Random-access by node ID during query. Must fit in RAM (~8GB) for 5–20ms query latency. Pre-built binary loaded at startup; not a query-time DB.</td>
+        </tr>
+        <tr>
+          <td><strong>POIs / Places</strong></td>
+          <td>Elasticsearch</td>
+          <td><code>place_id → {name, category, geo_point, s2_tokens[], address}</code></td>
+          <td>Combined text + spatial ranking. S2 cell tokens enable O(1) geographic pre-filtering. Handles 200M docs with &lt;50ms query latency.</td>
+        </tr>
+        <tr>
+          <td><strong>Road segment speeds</strong></td>
+          <td>Bigtable</td>
+          <td><code>segment_id#timestamp → {speed_mph, confidence}</code></td>
+          <td>Write-heavy append workload (1M+ rows/min). Time-series access (latest speed + 90-day history). Bigtable's LSM-tree design handles append writes without write amplification.</td>
+        </tr>
+        <tr>
+          <td><strong>Historical traffic profiles</strong></td>
+          <td>Bigtable / BigQuery</td>
+          <td><code>segment_id#dow#hour → {typical_speed}</code></td>
+          <td>Read by routing engine for time-dependent ETAs. Computed nightly via batch jobs over the 90-day Bigtable segment-speed history. Infrequently written, frequently read.</td>
+        </tr>
+        <tr>
+          <td><strong>Map source data</strong></td>
+          <td>Spanner (versioned rows)</td>
+          <td><code>version#feature_id → {geometry, attributes}</code></td>
+          <td>Globally consistent version promotion requires distributed transactions across datacenters. Spanner's TrueTime guarantees externally consistent writes. Enables atomic version pointer advancement.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 12. FAILURE & SCALE -->
+  <section id="failure">
+    <h2>12. Failure &amp; Scale</h2>
+
+    <h3>Routing server failure</h3>
+    <div class="card">
+      <div class="card-title">Routing server crashes mid-query</div>
+      <p>The CH graph is loaded in RAM at startup — routing servers are stateless. Load balancer health checks remove a crashed instance within 10–30 seconds. Other instances handle requests immediately with no shared state to synchronize. At 70% target utilization, the fleet absorbs a 30% capacity reduction with &lt;50% latency increase. Cold start from GCS binary: ~45 seconds. Autoscaling triggers at 80% utilization.</p>
+    </div>
+
+    <h3>CDN cache invalidation storm</h3>
+    <div class="card">
+      <div class="card-title">New map version invalidates widely-cached tiles</div>
+      <p>When a new map version promotes, tile URL paths change. A thundering herd hits origin GCS servers. Mitigation: stagger version rollout by region (US → Europe → APAC, 30-minute intervals). Pre-warm CDN PoPs with the top-1M most-requested tiles before promoting the version token. New clients get the new version; existing sessions continue with old version URLs until their next tile viewport pan/zoom, spreading the cache-fill over hours rather than seconds.</p>
+    </div>
+
+    <h3>Kafka consumer lag spike</h3>
+    <div class="card">
+      <div class="card-title">GPS probe rate spikes 10× during a major event</div>
+      <p>Kafka partitions absorb the burst — producers never block. Consumer lag increases, meaning traffic freshness degrades from 2 minutes toward 10 minutes. This is acceptable (graceful degradation). The system emits a <code>traffic_data_age</code> metric; ETA service automatically increases its uncertainty bound when data exceeds 5 minutes old. Autoscaling adds Dataflow workers to drain the backlog; typically cleared within 5–8 minutes.</p>
+    </div>
+
+    <h3>Map build pipeline failure</h3>
+    <div class="card">
+      <div class="card-title">Build pipeline crashes during version construction</div>
+      <p>The version pointer is only promoted after all three derived systems complete successfully. A failed build leaves the pointer on the previous snapshot — users see a slightly older map (15–30 minutes behind). The failed build retries from the last checkpoint. Since builds are idempotent (same input snapshot → same output), retries are safe. Previous snapshot retained for 24 hours supports instant rollback if a bad build is accidentally promoted.</p>
+    </div>
+
+    <h3>Scale stress test</h3>
+    <table class="t">
+      <thead><tr><th>Scenario</th><th>Impact</th><th>Mitigation</th></tr></thead>
+      <tbody>
+        <tr><td>2× route query spike (disaster, event)</td><td>Routing fleet at 140% utilization</td><td>CH graph is stateless — add servers. Load balancer health check propagates in &lt;30s. Autoscaling adds capacity within 2 min.</td></tr>
+        <tr><td>Major city road network change</td><td>Full 4-hour global CH rebuild triggered</td><td>Support regional CH sub-graphs. A city-level rebuild takes ~10 min and merges into the global graph without full recomputation.</td></tr>
+        <tr><td>Elasticsearch shard failure</td><td>Reduced search capacity for affected shard</td><td>3-replica sharding. Query continues on 2 replicas during failover. Auto-rebalancing promotes a replica to primary within ~90 seconds.</td></tr>
+        <tr><td>Stream processor outage (&gt;5 min)</td><td>Traffic data freezes at last snapshot</td><td>Routing falls back to historical traffic profiles for ETAs. Traffic overlay shows "data may be delayed" indicator. Kafka retains 24h backlog; processor catches up on recovery with no data loss.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+</div>
+<script>
+  const secs = document.querySelectorAll('section[id]');
+  const links = document.querySelectorAll('nav a[href^="#"]');
+  secs.forEach(s => new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const a = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin:'-20% 0px -70% 0px' }).observe(s));
+</script>
+</body>
+</html>
